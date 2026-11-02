@@ -1,0 +1,923 @@
+Build a complete, production-ready, responsive web application named:
+
+“Topclues Solutions – Payroll & Salary Slip Management System”
+
+Do not create only a visual prototype or static mockup. Generate a functional full-stack application with authentication, database, private file storage, salary calculations, PDF salary slips, email delivery, role-based access, historical payroll records, audit logs, validation, security rules, tests, and deployment instructions.
+
+Use TypeScript throughout.
+
+Recommended technology:
+
+- Frontend: React with TypeScript
+- Backend: secure Node.js server runtime or Firebase Cloud Functions
+- Authentication: Firebase Authentication with Google Sign-In only
+- Database: Cloud Firestore
+- Private PDF storage: Cloud Storage for Firebase
+- Hosting: Firebase Hosting, Firebase App Hosting, or Google AI Studio deployment
+- PDF generation: server-side only
+- Email delivery: backend email adapter using Firebase Trigger Email extension with SMTP, Gmail API, or another securely configured provider
+- Secrets: Google Cloud Secret Manager or Firebase secret configuration
+- Security: Firebase custom claims, Firestore Security Rules, Storage Security Rules, Firebase App Check and backend ID-token verification
+
+The application must not use Gemini or any LLM to calculate salaries, determine permissions, or make payroll decisions. All payroll calculations must be deterministic TypeScript functions with automated tests.
+
+## 1. Company configuration
+
+Company name: Topclues Solutions
+
+Default country and currency:
+
+- Country: India
+- Currency: INR
+- Currency symbol: ₹
+- Indian number formatting, for example ₹1,25,000.00
+- Date format: DD/MM/YYYY
+- Display timezone: Asia/Kolkata
+- Store timestamps in UTC and display them in Asia/Kolkata
+- Financial year: April to March
+
+Provide an Admin-only company settings screen containing:
+
+- Company name
+- Registered address
+- Company email
+- Company phone
+- Company logo
+- Salary-slip footer
+- Authorized-signatory name/designation
+- Payroll email sender name
+- Payroll email sender address
+- Current payroll calculation rules
+- Terms and conditions
+- Default salary-slip email template
+
+Do not invent missing company information. Show editable placeholders for the Super Admin to complete.
+
+## 2. Authentication and permitted users
+
+Use Google Sign-In only.
+
+Do not provide:
+
+- Email/password registration
+- Password reset
+- Phone login
+- Anonymous login
+- Public self-registration
+- A public “Create account” page
+
+The system has three roles:
+
+1. SUPER_ADMIN
+2. HR
+3. STAFF
+
+Bootstrap these exact management accounts:
+
+SUPER_ADMIN:
+
+- ceo@topclues.in
+
+HR:
+
+- unicorn@topclues.in
+- marketing@topclues.in
+
+Access rules:
+
+- `ceo@topclues.in` must always receive the SUPER_ADMIN role.
+- `unicorn@topclues.in` and `marketing@topclues.in` must always receive the HR role.
+- No other email may access the Admin/HR management dashboard.
+- A staff member may log in only when an Admin or HR user has already created an active staff profile containing that exact Google email.
+- The authenticated Google email must be verified.
+- Email comparison must be case-insensitive after trimming whitespace.
+- If an unknown Google account signs in, immediately deny access, sign it out and show: “Your account is not authorized. Please contact Topclues Solutions HR.”
+- Never trust a role sent by the browser.
+- Assign roles only through server-side Firebase Admin SDK custom claims.
+- Recheck the active staff record during sensitive operations.
+- A deactivated staff member must immediately lose access.
+- Revoke refresh tokens when a user is deactivated or their login email changes.
+- If a management email is also present in a staff profile, the fixed management role takes priority.
+- HR must never be able to create another HR or Super Admin.
+- Staff must never be able to change their role, salary, employee code, payroll data or permissions.
+
+Implement protected routes and backend authorization. Hiding a menu item is not sufficient security.
+
+## 3. Permission matrix
+
+### Super Admin: ceo@topclues.in
+
+Super Admin can:
+
+- Access every management page
+- View, create, edit and deactivate staff
+- Access payroll for every employee
+- Generate, publish, download and email salary slips
+- Reopen or correct finalized payroll
+- View reports and email-delivery history
+- View audit logs
+- Configure company information
+- Configure salary-calculation rules and rates
+- Create, edit, publish, archive and version terms and conditions
+- Manage salary-slip templates
+- Export payroll and bank-payment reports
+- View or reveal bank details through a protected, audited workflow
+
+Only the Super Admin can modify:
+
+- Terms and conditions
+- Calculation rates
+- Calculation formulas or rule settings
+- Company-wide payroll settings
+- Role assignments
+- Salary-slip template settings
+
+### HR: unicorn@topclues.in and marketing@topclues.in
+
+HR can:
+
+- Add new staff
+- Edit staff profiles
+- Deactivate or reactivate staff
+- Enter and update attendance and payroll inputs
+- Create monthly payroll
+- Preview calculations
+- Generate salary slips
+- Publish salary slips
+- Email individual or batch salary slips
+- Download operational payroll reports
+- Maintain staff bank details through an audited workflow
+- View email status and retry failed salary-slip emails
+
+HR cannot:
+
+- Create or promote an Admin or HR account
+- Edit roles
+- Edit calculation rules
+- Edit company-wide settings
+- Edit, publish or delete terms and conditions
+- Permanently delete historical salary records
+- Reopen finalized payroll after the configured correction window
+- Delete audit logs
+
+### Staff
+
+Staff can:
+
+- Access only their own portal
+- View their own profile
+- View masked bank details
+- Submit a bank-detail change request
+- View month-wise salary history
+- Open and download their own salary slips
+- View published terms and conditions
+- See the delivery status of their own salary-slip email
+- Log out
+
+Staff cannot:
+
+- Search for other employees
+- Read another employee’s data or PDF
+- View management dashboards
+- View payroll totals for the company
+- Change monthly salary or payroll inputs
+- View full bank account numbers after submission
+- Modify finalized salary slips
+- Access Firestore or Storage paths belonging to another employee
+
+## 4. Staff profile
+
+Create a structured staff profile form with these sections.
+
+### Employment details
+
+- Employee code, required and unique
+- Full legal name, required
+- Google login email, required and unique
+- Personal email, optional
+- Mobile number
+- Department
+- Designation
+- Reporting manager
+- Date of joining
+- Employment type
+- Work location
+- Monthly salary
+- Salary effective date
+- Staff status: Active, Inactive or Left
+- Profile photo, optional
+- Notes visible only to Admin/HR
+
+Automatically assign the STAFF role when HR creates a staff member. Do not allow HR to select another role.
+
+Maintain a salary-history collection containing:
+
+- Monthly salary
+- Effective-from date
+- Effective-to date
+- Changed by
+- Changed at
+- Reason for change
+
+A salary change must not modify previously finalized payroll.
+
+### Bank details
+
+Collect:
+
+- Account holder name
+- Bank name
+- Account number
+- Confirm account number
+- IFSC code
+- Branch name
+- Account type: Savings or Current
+- UPI ID, optional
+- Cancelled cheque or bank-proof document, optional
+- Verification status: Pending, Verified or Rejected
+- Verified by
+- Verified at
+- Rejection reason
+
+Security requirements for bank information:
+
+- Never store complete bank account details in browser logs, analytics, audit messages or error messages.
+- Never store the full bank account number in a client-readable Firestore document.
+- Encrypt sensitive banking values on the server using Google Cloud KMS or an equivalent envelope-encryption design.
+- Keep encrypted bank information in a separate server-only collection.
+- Expose only bank name and masked account number, such as `XXXXXX1234`, to normal screens.
+- Full bank details may be revealed only to authorized Admin/HR users after recent reauthentication.
+- Every reveal, modification, export and verification must be recorded in the audit log.
+- Salary slips must show only the bank name and last four digits, never the complete account number.
+- Staff bank-detail updates should create a change request. Preserve the currently verified details until HR approves the new details.
+- Validate that account number and confirmation match.
+- Validate the Indian IFSC format.
+- Do not store encryption keys in source code or frontend environment variables.
+
+## 5. Staff removal
+
+The “Remove Staff” operation must perform a soft deactivation, not permanent deletion.
+
+When staff are removed:
+
+- Set status to Inactive or Left
+- Record leaving date and reason
+- Revoke login sessions
+- Prevent future portal access
+- Preserve all salary history, PDFs, email history and audit records
+- Exclude the employee from new payroll periods unless explicitly restored
+
+Only the Super Admin may perform a permanent anonymization operation, and only through a separate confirmation workflow that preserves legally required payroll totals.
+
+## 6. Monthly payroll periods
+
+Provide a month selector and payroll-period management screen.
+
+Each payroll period should contain:
+
+- Period ID in `YYYY-MM` format
+- Month name
+- Year
+- Number of calendar/payroll days
+- Status: Draft, Calculated, Finalized, Published or Closed
+- Calculation-rule version
+- Terms-and-conditions version
+- Created by and created at
+- Finalized by and finalized at
+- Published by and published at
+- Total employees
+- Total base salary
+- Total additions
+- Total deductions
+- Total net payout
+
+The July 2026 period must use 31 days.
+
+Allow periods for every future month. Calculate the number of calendar days automatically, but let the Super Admin configure a different payroll-day basis for future periods.
+
+Finalized payroll must contain a complete snapshot of:
+
+- Employee identity and designation
+- Monthly salary
+- Calculation rates
+- Attendance inputs
+- Calculation results
+- Terms version
+- Salary-slip version
+
+Later profile or rule changes must not alter historical salary slips.
+
+## 7. Salary input fields
+
+For every staff member and payroll month, allow Admin/HR to enter:
+
+- Monthly salary, populated from effective salary history
+- LWP days
+- CL days
+- EL/Emergency Leave count
+- Late count within 15 minutes
+- Extra break hours
+- Early-leave hours
+- Extra payment
+- Extra working hours
+- Full holiday-working days
+- Outdoor-working days
+- Holiday-working hours
+- Remarks
+
+All numeric inputs must default to zero, disallow negative values and support appropriate decimal increments.
+
+Provide:
+
+- Save Draft
+- Calculate
+- Preview
+- Finalize
+- Generate Salary Slip
+- Publish and Email
+- Batch Calculate
+- Batch Generate Slips
+- Batch Email Slips
+
+## 8. Payroll rules and formulas
+
+Create one central, versioned payroll calculation service. Do not duplicate formula logic across pages or PDFs.
+
+Default rules:
+
+- Per-day salary = monthly salary ÷ payroll days in that month
+- July 2026 payroll days = 31
+- Two CL permissions are allowed per month
+- EL is a permission category included within the two allowed CL permissions
+- One EL is allowed per month
+- Each EL beyond one deducts 1.5 days of per-day salary
+- Two late arrivals within 15 minutes are allowed
+- For every complete two late counts beyond the first two, deduct 0.5 day salary
+- Extra break deduction = ₹50 per hour
+- Early-leave deduction = ₹50 per hour, matching the existing salary workbook; keep this rate configurable by Super Admin
+- Extra-hours payment = ₹100 per hour
+- Full-day holiday work payment = 1.5 × per-day salary for every holiday-working day
+- Outdoor-work payment = ₹500 per day
+- Holiday hourly payment = ₹150 per hour
+- Extra payment is a direct addition
+
+Use these deterministic formulas:
+
+```text
+perDaySalary =
+  monthlySalary / payrollDays
+
+lwpDeduction =
+  perDaySalary * lwpDays
+
+allowedELWithinCL =
+  min(elCount, 1)
+
+excessCLDays =
+  max(0, clDays + allowedELWithinCL - 2)
+
+excessCLDeduction =
+  perDaySalary * excessCLDays
+
+extraELCount =
+  max(0, elCount - 1)
+
+extraELDeduction =
+  perDaySalary * extraELCount * 1.5
+
+chargeableLateDays =
+  floor(max(0, lateCount - 2) / 2) * 0.5
+
+lateDeduction =
+  perDaySalary * chargeableLateDays
+
+extraBreakDeduction =
+  extraBreakHours * 50
+
+earlyLeaveDeduction =
+  earlyLeaveHours * 50
+
+extraHoursPayment =
+  extraHours * 100
+
+holidayDayPayment =
+  holidayWorkingDays * perDaySalary * 1.5
+
+outdoorPayment =
+  outdoorWorkingDays * 500
+
+holidayHourlyPayment =
+  holidayWorkingHours * 150
+
+grossAdditions =
+  extraPayment
+  + extraHoursPayment
+  + holidayDayPayment
+  + outdoorPayment
+  + holidayHourlyPayment
+
+grossEarnings =
+  monthlySalary + grossAdditions
+
+totalDeductions =
+  lwpDeduction
+  + excessCLDeduction
+  + extraELDeduction
+  + lateDeduction
+  + extraBreakDeduction
+  + earlyLeaveDeduction
+
+netSalary =
+  max(0, grossEarnings - totalDeductions)
+```
+
+Financial calculation requirements:
+
+- Use a decimal-money library or integer paise; do not use unsafe floating-point arithmetic.
+- Show all monetary results rounded to two decimal places.
+- Use the same rounding policy in the dashboard, database, PDF and email.
+- Display the intermediate calculation components so HR can understand every total.
+- Do not add PF, ESI, professional tax, TDS, loan deductions or bonuses unless the Super Admin later configures them.
+- Rule changes apply only to future draft payroll periods.
+- Finalized historical data must remain unchanged.
+
+Add automated formula tests, including:
+
+- Late counts 0, 2, 3, 4, 5 and 6
+- CL/EL combinations such as CL 2 + EL 0, CL 1 + EL 1, CL 2 + EL 1 and CL 2 + EL 2
+- February leap year and non-leap year
+- Zero salary inputs
+- Decimal hours
+- Rounding edge cases
+
+## 9. Salary slips
+
+Generate professional A4 PDF salary slips server-side.
+
+Each slip must contain:
+
+- Topclues Solutions name and logo
+- Salary month and year
+- Unique salary-slip number
+- Employee code
+- Full employee name
+- Department
+- Designation
+- Date of joining
+- Bank name and masked account number
+- Payroll days
+- Monthly salary
+- Per-day salary
+- Detailed earnings table
+- Detailed deductions table
+- Gross additions
+- Gross earnings
+- Total deductions
+- Net salary
+- Net salary in Indian words
+- Attendance and leave summary
+- Remarks
+- Published terms-and-conditions version
+- Generated date and time
+- “Computer generated salary slip” statement
+- Authorized-signatory section
+
+Use this filename:
+
+`[Employee Full Name] - Salary Slip - [MMMM YYYY].pdf`
+
+Sanitize invalid filename characters while preserving the employee’s complete readable name.
+
+Store PDFs privately at a path similar to:
+
+`salary-slips/{staffId}/{YYYY-MM}/v{version}/salary-slip.pdf`
+
+Do not create public permanent URLs. Staff downloads must go through security rules or an authenticated backend endpoint. Any signed URL must be short-lived.
+
+When a published salary slip is corrected:
+
+- Do not silently overwrite it.
+- Create a new version.
+- Retain previous versions for audit.
+- Clearly mark superseded versions.
+- Only the Super Admin can reopen a published payroll record.
+
+## 10. Salary-slip email delivery
+
+Generate and send a separate email to each employee.
+
+Never put multiple employees in To, CC or BCC on the same salary email.
+
+Email recipient:
+
+- The active staff profile’s approved email address
+
+Suggested subject:
+
+`Topclues Solutions Salary Slip – [MMMM YYYY] – [Employee Full Name]`
+
+Email body should include:
+
+- Employee name
+- Salary month
+- Confirmation that the salary slip is available
+- Secure portal link
+- Contact-HR message
+- Company signature
+
+Attach the correct employee PDF when supported and also provide an authenticated portal link.
+
+Email requirements:
+
+- Send from a backend function, never directly from the browser.
+- Store SMTP, Gmail or API credentials only in Secret Manager.
+- Make the email provider configurable.
+- Support Firebase Trigger Email, authenticated Gmail API or SMTP through a clean provider adapter.
+- Use an idempotency key containing staff ID, payroll period and salary-slip version.
+- Prevent accidental duplicate emails.
+- Track Pending, Processing, Sent and Failed status.
+- Store provider message ID, attempt count, last attempt, sent time and safe error summary.
+- Allow Admin/HR to retry failed messages.
+- Display batch progress and a final delivery report.
+- Require a confirmation screen before batch sending.
+- Never include complete bank information in the email.
+- Create an audit event for each send and retry.
+- Do not let a client write arbitrary recipients or arbitrary email contents into the email queue.
+
+## 11. Admin and HR dashboard
+
+Create a professional responsive dashboard with:
+
+### Summary cards
+
+- Active staff
+- Inactive staff
+- Current payroll status
+- Total monthly base salary
+- Total additions
+- Total deductions
+- Total net payout
+- Slips generated
+- Emails sent
+- Emails failed
+
+### Charts
+
+- Month-wise payroll trend
+- Monthly gross versus net salary
+- Additions and deductions trend
+- Department-wise net payroll
+- Email delivery status
+
+### Payroll table
+
+Columns should include:
+
+- Employee code
+- Employee name
+- Department
+- Monthly salary
+- Gross additions
+- Total deductions
+- Net salary
+- Payroll status
+- PDF status
+- Email status
+- Actions
+
+Add search, department filters, month/year filters, status filters, pagination, sorting and export.
+
+Use live Firestore listeners where appropriate so dashboard totals update when payroll data changes.
+
+## 12. Staff portal
+
+Create a simplified mobile-friendly staff portal.
+
+Pages:
+
+- My Dashboard
+- My Profile
+- My Bank Details
+- My Salary History
+- My Salary Slip
+- Terms and Conditions
+- Help/Contact HR
+
+Dashboard cards:
+
+- Latest salary month
+- Latest gross earnings
+- Latest deductions
+- Latest net salary
+- Salary-slip email status
+- Download latest slip
+
+Salary history table:
+
+- Month
+- Year
+- Monthly salary
+- Gross additions
+- Total deductions
+- Net salary
+- Published date
+- View
+- Download
+
+Staff queries must always be scoped to the authenticated staff ID. Security Rules must prevent collection-wide payroll queries by staff.
+
+## 13. Terms and conditions
+
+Build a versioned terms-and-conditions module.
+
+Only `ceo@topclues.in` can:
+
+- Create
+- Edit
+- Publish
+- Archive
+- Restore
+- Select the effective date
+
+HR and Staff may only view the currently published version and historical versions attached to their salary slips.
+
+Every version must store:
+
+- Version number
+- Title
+- Content
+- Effective date
+- Status
+- Created by
+- Created at
+- Published by
+- Published at
+- Content hash
+
+Each finalized payroll record must reference the exact terms version used for that salary period.
+
+## 14. Database design
+
+Create documented Firestore collections similar to:
+
+- `users/{uid}`
+- `staff/{staffId}`
+- `staff/{staffId}/salaryHistory/{salaryHistoryId}`
+- `staffPrivate/{staffId}` for server-only encrypted banking data
+- `bankChangeRequests/{requestId}`
+- `payrollPeriods/{periodId}`
+- `payrollPeriods/{periodId}/records/{staffId}`
+- `salarySlips/{slipId}`
+- `termsVersions/{versionId}`
+- `companySettings/main`
+- `payrollRuleVersions/{ruleVersionId}`
+- `emailJobs/{jobId}`
+- `auditLogs/{auditId}`
+
+Use server timestamps and explicit document schemas.
+
+Add Firestore indexes needed for:
+
+- Month and status filters
+- Staff salary history
+- Department reports
+- Email status
+- Active staff
+- Audit-log date and actor searches
+
+## 15. Security Rules
+
+Generate production Firestore and Storage Security Rules with a deny-by-default design.
+
+Required tests:
+
+- Unauthenticated users cannot read anything.
+- Unknown Google accounts cannot access application data.
+- Super Admin can access permitted management data.
+- HR can manage staff and payroll but cannot modify terms, roles or global calculation rules.
+- Staff can read only their own approved profile and published payroll.
+- Staff cannot list or query other employees.
+- Staff cannot download another employee’s PDF even by guessing its path.
+- Deactivated staff are denied.
+- Full bank information is inaccessible directly from the client.
+- Email queue cannot be abused to email arbitrary recipients.
+- Finalized payroll cannot be edited through direct client requests.
+- Direct URL navigation does not bypass authorization.
+
+Use Firebase Emulator Suite tests for Firestore Rules, Storage Rules and callable/backend functions.
+
+Remember that server Admin SDK operations bypass client Security Rules. Every backend endpoint must independently validate the Firebase ID token, role, staff status and requested resource ownership.
+
+## 16. Audit logs
+
+Create immutable audit logs for:
+
+- Login success and rejected login
+- Staff creation and update
+- Staff deactivation/reactivation
+- Salary change
+- Bank-detail submission, reveal, verification and export
+- Payroll calculation
+- Payroll finalization
+- Payroll reopening
+- PDF generation and download
+- Salary-slip email send and retry
+- Terms creation/editing/publishing
+- Rule/settings changes
+- Role/permission changes
+
+Store:
+
+- Actor UID
+- Actor email
+- Actor role
+- Action
+- Entity type and ID
+- Timestamp
+- Safe before/after summary
+- IP/user-agent where legally and technically appropriate
+- Request/correlation ID
+
+Never place passwords, access tokens, complete bank account numbers, encryption keys or private salary-slip URLs in audit logs.
+
+## 17. Excel/CSV migration
+
+Provide an Admin/HR import wizard for migrating the existing salary workbook.
+
+Support CSV and XLSX/XLSM data files, but never execute or import VBA macros.
+
+Allow mapping of these columns:
+
+- Employee code
+- Employee name
+- Email
+- Department
+- Designation
+- Monthly salary
+- LWP
+- CL
+- EL
+- Late count
+- Extra break hours
+- Early-leave hours
+- Extra payment
+- Extra hours
+- Holiday-working days
+- Outdoor-working days
+- Holiday-working hours
+
+The wizard must:
+
+- Preview data before import
+- Validate required fields
+- Detect duplicate employee codes
+- Detect duplicate emails
+- Show row-level errors
+- Allow correction or exclusion
+- Use a transaction/batch operation
+- Produce an import report
+- Never import spreadsheet formulas as trusted payroll totals
+- Recalculate every total using the application’s deterministic calculation service
+
+Firestore must be the system of record after migration. Do not depend on the Excel workbook as the live database.
+
+## 18. User interface
+
+Use a clean professional payroll design suitable for Topclues Solutions.
+
+Style:
+
+- Modern, simple and business-focused
+- Responsive desktop, tablet and mobile layouts
+- Accessible color contrast
+- Keyboard-accessible forms
+- Loading, empty and error states
+- Confirmation dialogs for sensitive actions
+- Toast messages for successful actions
+- Skeleton loaders for data
+- Clear ₹ currency formatting
+- No decorative AI chatbot unless requested later
+
+Navigation should change by role.
+
+Management navigation:
+
+- Dashboard
+- Staff
+- Payroll
+- Salary Slips
+- Email History
+- Reports
+- Terms
+- Audit Logs
+- Settings
+
+Staff navigation:
+
+- My Dashboard
+- Salary History
+- My Profile
+- Bank Details
+- Terms
+- Help
+
+## 19. Reports
+
+Create exportable reports for authorized management users:
+
+- Monthly payroll summary
+- Employee-wise salary ledger
+- Department-wise payroll
+- Additions report
+- Deduction report
+- LWP/CL/EL report
+- Late and extra-break report
+- Salary-slip generation report
+- Email-delivery report
+- Bank-payment report with controlled access
+- Financial-year payroll summary
+
+Support CSV and printable PDF exports. Do not include full bank account numbers except in a separately authorized and audited bank-payment export.
+
+## 20. Reliability and data integrity
+
+Implement:
+
+- Firestore transactions or batch writes for payroll finalization
+- Unique payroll record per staff member per period
+- Idempotent PDF generation
+- Idempotent email sending
+- Server-side validation
+- Optimistic-concurrency or version checks
+- Retry handling for temporary email/PDF failures
+- Clear error messages without sensitive data
+- Soft deletion
+- Historical version preservation
+- Backup and restore documentation
+
+A published salary slip must correspond exactly to the payroll values stored in its finalized snapshot.
+
+## 21. Required deliverables
+
+Generate:
+
+1. Complete frontend code
+2. Complete backend/functions code
+3. Firebase Authentication integration
+4. Firestore schemas and converters
+5. Firestore Security Rules
+6. Cloud Storage Security Rules
+7. Required Firestore indexes
+8. Payroll calculation service
+9. Server-side PDF generator
+10. Email provider adapter
+11. Audit-log service
+12. Excel/CSV import wizard
+13. Role-based route protection
+14. Unit tests for payroll calculations
+15. Emulator security-rule tests
+16. Example seed/setup script for the three management emails
+17. `.env.example` containing placeholder names only
+18. Setup and deployment README
+19. Manual Firebase configuration checklist
+20. Production security checklist
+
+Do not hardcode:
+
+- Firebase private keys
+- SMTP passwords
+- Gmail credentials
+- KMS encryption keys
+- API secrets
+
+## 22. Build and verification process
+
+Before coding, briefly show:
+
+- Proposed architecture
+- Database design
+- Role matrix
+- Required Firebase/Google services
+- Secrets and settings that require manual configuration
+
+Then build the complete application.
+
+After building:
+
+- Run type checking
+- Run linting
+- Run formula unit tests
+- Run Firestore and Storage Rules tests
+- Fix all reported errors
+- Test every role
+- Confirm unknown users are denied
+- Confirm staff cannot access another employee’s data
+- Confirm only the Super Admin can change terms and rules
+- Confirm historical payroll remains unchanged after a salary/profile update
+- Confirm PDF totals exactly match finalized payroll totals
+- Confirm each email is addressed to the correct individual employee
+- Provide clear instructions for enabling Google Sign-In, creating Firestore, enabling Storage, configuring App Check, deploying security rules, configuring the email provider and deploying the application
+
+If any requirement cannot be implemented automatically inside Google AI Studio, generate the necessary code and provide an exact, numbered manual setup procedure. Do not silently omit the requirement.
+
+Build the application in manageable phases if necessary, but preserve and complete every requirement in this specification.
