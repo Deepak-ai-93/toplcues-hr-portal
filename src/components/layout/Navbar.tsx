@@ -19,9 +19,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePeriod }) => {
     <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between gap-8 sticky top-0 z-30">
       {/* Zone 1: Single text element wordmark */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center font-bold text-sm tracking-wider">
-          TC
-        </div>
+        <img
+          src="/brand/topclues-icon-512.png"
+          alt="Topclues"
+          className="w-9 h-9 object-contain"
+        />
         <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
           Topclues Solutions
         </span>

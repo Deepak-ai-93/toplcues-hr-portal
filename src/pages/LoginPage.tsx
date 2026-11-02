@@ -13,13 +13,17 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center font-bold text-lg shadow-sm">
-          TC
-        </div>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          Topclues Solutions
-        </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <img
+          src="/brand/topclues-logo-dark.png"
+          alt="Topclues Solutions"
+          className="mx-auto h-16 w-auto dark:hidden"
+        />
+        <img
+          src="/brand/topclues-logo-white.png"
+          alt="Topclues Solutions"
+          className="mx-auto hidden h-16 w-auto dark:block"
+        />
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
           Payroll & Salary Slip Management System
         </p>
       </div>
