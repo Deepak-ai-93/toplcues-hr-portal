@@ -24,6 +24,7 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   salarySlipFooter: 'Strictly Confidential – Topclues Solutions Proprietary. For official employee record only.',
   authorizedSignatoryName: 'Arunav Kumar',
   authorizedSignatoryDesignation: 'Founder & Managing Director',
+  authorizedSignatorySignatureUrl: '',
   payrollEmailSenderName: 'Topclues Solutions Payroll Operations',
   payrollEmailSenderAddress: 'payroll@topclues.in',
   defaultEmailTemplate: 'Dear {fullName},\n\nYour salary slip for {monthName} {year} has been published. Please log in to your employee portal to view your statement.\n\nWarm regards,\nTopclues Solutions HR',

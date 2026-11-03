@@ -12,9 +12,11 @@ import {
   Mail,
   Save,
   Shield,
-  Sliders
+  Sliders,
+  Trash2,
+  Upload
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CompanySettings, PayrollRuleConfig } from '../../types';
 import { getCompanySettings, getPayrollRules, saveCompanySettings, savePayrollRules } from '../../lib/api';
 import { logAuditEvent } from '../../lib/auditLogger';
@@ -31,6 +33,32 @@ export const CompanySettingsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
+
+  function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (file.type !== 'image/png') {
+      alert('Please upload a PNG image.');
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      alert('Signature PNG must be 1 MB or smaller.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSettings((prev) => ({
+        ...prev,
+        authorizedSignatorySignatureUrl: typeof reader.result === 'string' ? reader.result : '',
+      }));
+    };
+    reader.onerror = () => alert('Could not read the selected file.');
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     loadSettings();
@@ -235,6 +263,59 @@ export const CompanySettingsPage: React.FC = () => {
                   className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-75"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Authorized Signature (PNG)
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="h-16 w-40 shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                  {settings.authorizedSignatorySignatureUrl ? (
+                    <img
+                      src={settings.authorizedSignatorySignatureUrl}
+                      alt="Authorized signatory signature"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-[11px] text-slate-400">No signature uploaded</span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    disabled={!isSuperAdmin}
+                    onClick={() => signatureInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload PNG</span>
+                  </button>
+                  {settings.authorizedSignatorySignatureUrl && (
+                    <button
+                      type="button"
+                      disabled={!isSuperAdmin}
+                      onClick={() =>
+                        setSettings({ ...settings, authorizedSignatorySignatureUrl: '' })
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={signatureInputRef}
+                  type="file"
+                  accept="image/png"
+                  className="hidden"
+                  onChange={handleSignatureUpload}
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                PNG up to 1 MB. Appears above the signature line on generated salary slips.
+              </p>
             </div>
 
             <div>

@@ -213,6 +213,7 @@ export interface CompanySettings {
   salarySlipFooter: string;
   authorizedSignatoryName: string;
   authorizedSignatoryDesignation: string;
+  authorizedSignatorySignatureUrl: string;
   payrollEmailSenderName: string;
   payrollEmailSenderAddress: string;
   defaultEmailTemplate: string;

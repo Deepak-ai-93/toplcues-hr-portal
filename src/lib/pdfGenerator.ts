@@ -284,7 +284,30 @@ export function generateSalarySlipPDF(data: SalarySlipPDFData): jsPDF {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('For Topclues Solutions', margin + contentWidth - 45, y - 8, { align: 'center' });
+  doc.text('For Topclues Solutions', margin + contentWidth - 45, y - 16, { align: 'center' });
+
+  // Uploaded signature image sits directly above the signature line.
+  const signatureImage = company.authorizedSignatorySignatureUrl;
+  if (signatureImage) {
+    try {
+      const props = doc.getImageProperties(signatureImage);
+      if (props.width > 0 && props.height > 0) {
+        const scale = Math.min(44 / props.width, 12 / props.height);
+        const imgW = props.width * scale;
+        const imgH = props.height * scale;
+        doc.addImage(
+          signatureImage,
+          'PNG',
+          margin + contentWidth - 42.5 - imgW / 2,
+          y - 2 - imgH,
+          imgW,
+          imgH
+        );
+      }
+    } catch {
+      // Unreadable image data: fall back to the signature line only.
+    }
+  }
 
   // Signature line
   doc.setDrawColor(148, 163, 184);
