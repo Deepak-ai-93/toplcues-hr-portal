@@ -108,6 +108,8 @@ export const AuditLogsPage: React.FC = () => {
           <option value="EMAIL">Email Dispatch (EMAIL)</option>
           <option value="TERMS">Terms Governance (TERMS)</option>
           <option value="SETTINGS">Company Settings (SETTINGS)</option>
+          <option value="LEAVE">Leave Requests (LEAVE)</option>
+          <option value="RESIGNATION">Resignations (RESIGNATION)</option>
         </select>
       </div>
 

@@ -6,10 +6,12 @@
 import {
   Banknote,
   BookOpen,
-  Calculator,
   Calendar,
+  CalendarDays,
+  Calculator,
   FileSpreadsheet,
   FileText,
+  FileWarning,
   HelpCircle,
   History,
   LayoutDashboard,
@@ -18,6 +20,7 @@ import {
   Settings,
   ShieldCheck,
   UserCheck,
+  UserMinus,
   Users,
   X
 } from 'lucide-react';
@@ -35,12 +38,16 @@ export type ActiveTab =
   | 'audit-logs'
   | 'settings'
   | 'excel-import'
+  | 'leave-requests'
+  | 'resignation-requests'
   | 'staff-dashboard'
   | 'staff-salary-history'
   | 'staff-profile'
   | 'staff-bank-details'
   | 'staff-terms'
-  | 'staff-help';
+  | 'staff-help'
+  | 'staff-leave'
+  | 'staff-resignation';
 
 interface SidebarProps {
   currentTab: ActiveTab;
@@ -57,6 +64,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, isOpe
     { tab: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
     { tab: 'staff', label: 'Staff Directory', icon: Users },
     { tab: 'payroll', label: 'Payroll & Attendance', icon: Calculator },
+    { tab: 'leave-requests', label: 'Leave Requests', icon: CalendarDays },
+    { tab: 'resignation-requests', label: 'Resignation Requests', icon: UserMinus },
     { tab: 'salary-slips', label: 'Salary Slips', icon: FileText },
     { tab: 'email-history', label: 'Email Delivery Queue', icon: Mail },
     { tab: 'reports', label: 'Reports & Exports', icon: Banknote },
@@ -68,6 +77,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, isOpe
 
   const staffNavItems: { tab: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { tab: 'staff-dashboard', label: 'My Dashboard', icon: LayoutDashboard },
+    { tab: 'staff-leave', label: 'Apply for Leave', icon: CalendarDays },
+    { tab: 'staff-resignation', label: 'My Resignation', icon: FileWarning },
     { tab: 'staff-salary-history', label: 'My Salary History', icon: History },
     { tab: 'staff-profile', label: 'My Profile', icon: UserCheck },
     { tab: 'staff-bank-details', label: 'Bank Account & Request', icon: Banknote },

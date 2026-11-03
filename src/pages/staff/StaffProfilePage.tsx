@@ -97,6 +97,27 @@ export const StaffProfilePage: React.FC = () => {
             <div className="text-slate-900 dark:text-slate-100">{staffProfile?.workLocation || 'Bengaluru HQ'}</div>
           </div>
 
+          {staffProfile?.rejoinedDate && (
+            <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 space-y-1">
+              <span className="text-emerald-700 dark:text-emerald-300">Rejoined On</span>
+              <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+                {formatKolkataDate(staffProfile.rejoinedDate)}
+              </div>
+            </div>
+          )}
+
+          {staffProfile?.leavingDate && (
+            <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 space-y-1">
+              <span className="text-amber-700 dark:text-amber-300">Leaving Date</span>
+              <div className="font-semibold text-amber-800 dark:text-amber-200">
+                {formatKolkataDate(staffProfile.leavingDate)}
+              </div>
+              {staffProfile.leavingReason && (
+                <div className="text-[11px] text-amber-700 dark:text-amber-300">{staffProfile.leavingReason}</div>
+              )}
+            </div>
+          )}
+
           <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
             <span className="text-slate-400">Current Monthly Base Compensation</span>
             <div className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">

@@ -12,8 +12,10 @@ import { CompanySettingsPage } from './pages/admin/CompanySettingsPage';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { EmailHistoryPage } from './pages/admin/EmailHistoryPage';
 import { ExcelImportPage } from './pages/admin/ExcelImportPage';
+import { LeaveRequestsPage } from './pages/admin/LeaveRequestsPage';
 import { PayrollEntryPage } from './pages/admin/PayrollEntryPage';
 import { ReportsPage } from './pages/admin/ReportsPage';
+import { ResignationRequestsPage } from './pages/admin/ResignationRequestsPage';
 import { SalarySlipsPage } from './pages/admin/SalarySlipsPage';
 import { StaffListPage } from './pages/admin/StaffListPage';
 import { TermsPage } from './pages/admin/TermsPage';
@@ -21,7 +23,9 @@ import { LoginPage } from './pages/LoginPage';
 import { StaffBankDetailsPage } from './pages/staff/StaffBankDetailsPage';
 import { StaffDashboardPage } from './pages/staff/StaffDashboardPage';
 import { StaffHelpPage } from './pages/staff/StaffHelpPage';
+import { StaffLeavePage } from './pages/staff/StaffLeavePage';
 import { StaffProfilePage } from './pages/staff/StaffProfilePage';
+import { StaffResignationPage } from './pages/staff/StaffResignationPage';
 import { StaffSalaryHistoryPage } from './pages/staff/StaffSalaryHistoryPage';
 import { StaffTermsPage } from './pages/staff/StaffTermsPage';
 
@@ -73,6 +77,10 @@ const AppContent: React.FC = () => {
         return <StaffListPage />;
       case 'payroll':
         return <PayrollEntryPage />;
+      case 'leave-requests':
+        return <LeaveRequestsPage />;
+      case 'resignation-requests':
+        return <ResignationRequestsPage />;
       case 'salary-slips':
         return <SalarySlipsPage />;
       case 'email-history':
@@ -91,6 +99,10 @@ const AppContent: React.FC = () => {
       // Staff Portal
       case 'staff-dashboard':
         return <StaffDashboardPage />;
+      case 'staff-leave':
+        return <StaffLeavePage />;
+      case 'staff-resignation':
+        return <StaffResignationPage />;
       case 'staff-salary-history':
         return <StaffSalaryHistoryPage />;
       case 'staff-profile':

@@ -8,9 +8,12 @@ import type {
   BankChangeRequest,
   CompanySettings,
   EmailJob,
+  LeaveRequest,
+  LeaveType,
   PayrollPeriod,
   PayrollRecord,
   PayrollRuleConfig,
+  ResignationRequest,
   SalaryHistoryEntry,
   StaffProfile,
   TermsVersion,
@@ -55,6 +58,12 @@ function camelize<T>(value: unknown): T {
 
 function ensure(data: unknown, error: SupabaseError | null, context: string): void {
   if (error) throw new Error(`${context}: ${error.message}`);
+}
+
+async function callRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.rpc(fn, args);
+  if (error) throw new Error(error.message);
+  return camelize<T>(data);
 }
 
 async function fetchAll<T>(table: string, orderBy?: { column: string; ascending?: boolean }): Promise<T[]> {
@@ -314,6 +323,100 @@ export async function saveBankChangeRequest(request: BankChangeRequest): Promise
 
 export async function updateBankChangeRequest(id: string, patch: Partial<BankChangeRequest>): Promise<void> {
   await updateRowById('bank_change_requests', id, patch);
+}
+
+// ---------------------------------------------------------------------------
+// Leave requests
+// ---------------------------------------------------------------------------
+
+export async function listLeaveRequests(staffId?: string): Promise<LeaveRequest[]> {
+  const rows = staffId
+    ? await fetchWhere<LeaveRequest>('leave_requests', 'staff_id', staffId)
+    : await fetchAll<LeaveRequest>('leave_requests', { column: 'created_at', ascending: false });
+  return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function applyLeave(input: {
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  staffId?: string;
+}): Promise<LeaveRequest> {
+  return callRpc<LeaveRequest>('apply_leave', {
+    p_leave_type: input.leaveType,
+    p_start_date: input.startDate,
+    p_end_date: input.endDate,
+    p_reason: input.reason,
+    p_staff_id: input.staffId ?? null,
+  });
+}
+
+export async function reviewLeave(
+  id: string,
+  decision: 'APPROVE' | 'REJECT',
+  note?: string
+): Promise<LeaveRequest> {
+  return callRpc<LeaveRequest>('review_leave', {
+    p_request_id: id,
+    p_decision: decision,
+    p_note: note ?? null,
+  });
+}
+
+export async function cancelLeave(id: string): Promise<LeaveRequest> {
+  return callRpc<LeaveRequest>('cancel_leave', { p_request_id: id });
+}
+
+// ---------------------------------------------------------------------------
+// Resignation requests
+// ---------------------------------------------------------------------------
+
+export async function listResignationRequests(staffId?: string): Promise<ResignationRequest[]> {
+  const rows = staffId
+    ? await fetchWhere<ResignationRequest>('resignation_requests', 'staff_id', staffId)
+    : await fetchAll<ResignationRequest>('resignation_requests', { column: 'submitted_at', ascending: false });
+  return rows.sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1));
+}
+
+export async function submitResignation(input: {
+  lastWorkingDate: string;
+  reason: string;
+  staffId?: string;
+}): Promise<ResignationRequest> {
+  return callRpc<ResignationRequest>('submit_resignation', {
+    p_last_working_date: input.lastWorkingDate,
+    p_reason: input.reason,
+    p_staff_id: input.staffId ?? null,
+  });
+}
+
+export async function reviewResignation(
+  id: string,
+  decision: 'APPROVE' | 'REJECT',
+  note?: string
+): Promise<ResignationRequest> {
+  return callRpc<ResignationRequest>('review_resignation', {
+    p_request_id: id,
+    p_decision: decision,
+    p_note: note ?? null,
+  });
+}
+
+export async function withdrawResignation(id: string): Promise<ResignationRequest> {
+  return callRpc<ResignationRequest>('withdraw_resignation', { p_request_id: id });
+}
+
+export async function reactivateStaff(
+  staffId: string,
+  rejoinedDate: string,
+  note?: string
+): Promise<StaffProfile> {
+  return callRpc<StaffProfile>('reactivate_staff', {
+    p_staff_id: staffId,
+    p_rejoined_date: rejoinedDate,
+    p_note: note ?? null,
+  });
 }
 
 // ---------------------------------------------------------------------------

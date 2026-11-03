@@ -20,6 +20,7 @@ interface AuthContextType {
   unauthorizedMessage: string | null;
   signIn: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  refreshStaffProfile: () => Promise<StaffProfile | null>;
   clearUnauthorizedMessage: () => void;
   // Dev simulation helper for testing distinct personas easily in the preview
   simulatePersona: (personaEmail: string) => Promise<void>;
@@ -190,6 +191,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function refreshStaffProfile(): Promise<StaffProfile | null> {
+    if (!currentUser || currentUser.id.startsWith('sim_')) return staffProfile;
+    const email = (currentUser.email || '').trim().toLowerCase();
+    if (!email) return staffProfile;
+
+    try {
+      const refreshed = await getStaffByEmail(email);
+      setStaffProfile(refreshed);
+      if (refreshed && refreshed.status !== 'Active') {
+        setUnauthorizedMessage(
+          'Your staff account is no longer active. Please contact Topclues Solutions HR.'
+        );
+        await supabase.auth.signOut();
+      }
+      return refreshed;
+    } catch (err) {
+      console.warn('Staff profile refresh failed:', err);
+      return staffProfile;
+    }
+  }
+
   async function signIn() {
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -251,6 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unauthorizedMessage,
         signIn,
         signOutUser,
+        refreshStaffProfile,
         clearUnauthorizedMessage: () => setUnauthorizedMessage(null),
         simulatePersona,
       }}

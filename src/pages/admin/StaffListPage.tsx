@@ -9,9 +9,12 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
+  FileWarning,
   History,
   Lock,
+  Pencil,
   Plus,
+  RotateCcw,
   Search,
   Shield,
   Trash2,
@@ -26,12 +29,15 @@ import {
   listSalaryHistory,
   listStaff,
   saveStaff,
+  submitResignation,
   updateStaff
 } from '../../lib/api';
 import { logAuditEvent } from '../../lib/auditLogger';
 import { formatIndianCurrency, formatKolkataDate } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
 import { DecimalInput } from '../../components/DecimalInput';
+import { StaffEditModal } from '../../components/staff/StaffEditModal';
+import { RejoinStaffModal } from '../../components/staff/RejoinStaffModal';
 
 export const StaffListPage: React.FC = () => {
   const { userProfile, role } = useAuth();
@@ -94,6 +100,15 @@ export const StaffListPage: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
+  const [directoryView, setDirectoryView] = useState<'current' | 'old'>('current');
+  const [editingStaff, setEditingStaff] = useState<StaffProfile | null>(null);
+  const [rejoiningStaff, setRejoiningStaff] = useState<StaffProfile | null>(null);
+  const [resignationStaff, setResignationStaff] = useState<StaffProfile | null>(null);
+  const [resignationDate, setResignationDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [resignationReason, setResignationReason] = useState<string>('');
+  const [resignationError, setResignationError] = useState<string | null>(null);
+  const [resignationSaving, setResignationSaving] = useState<boolean>(false);
+
   useEffect(() => {
     loadStaff();
   }, []);
@@ -111,7 +126,10 @@ export const StaffListPage: React.FC = () => {
   }
 
   // Filter staff list
-  const filteredStaff = staffList.filter((s) => {
+  const viewStaff = staffList.filter((s) =>
+    directoryView === 'current' ? s.status === 'Active' : s.status !== 'Active'
+  );
+  const filteredStaff = viewStaff.filter((s) => {
     const matchesSearch =
       s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -280,32 +298,25 @@ export const StaffListPage: React.FC = () => {
     }
   }
 
-  // Reactivate Staff
-  async function handleReactivateStaff(staff: StaffProfile) {
+  async function handleSubmitResignation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resignationStaff) return;
+
+    setResignationSaving(true);
+    setResignationError(null);
     try {
-      await updateStaff(staff.id, {
-        status: 'Active',
-        leavingDate: undefined,
-        leavingReason: undefined,
-        updatedAt: new Date().toISOString(),
+      await submitResignation({
+        lastWorkingDate: resignationDate,
+        reason: resignationReason.trim(),
+        staffId: resignationStaff.id,
       });
-
-      await logAuditEvent({
-        actorUid: userProfile?.uid || 'HR',
-        actorEmail: userProfile?.email || 'hr@topclues.in',
-        actorRole: role || 'HR',
-        action: 'REACTIVATE_STAFF',
-        entityType: 'STAFF',
-        entityId: staff.id,
-        details: {
-          employeeCode: staff.employeeCode,
-          fullName: staff.fullName,
-        },
-      });
-
-      await loadStaff();
+      setResignationStaff(null);
+      setResignationReason('');
+      alert('Resignation submitted. HR review is the first approval step.');
     } catch (err) {
-      console.error('Reactivation error:', err);
+      setResignationError(err instanceof Error ? err.message : 'Failed to submit resignation.');
+    } finally {
+      setResignationSaving(false);
     }
   }
 
@@ -425,6 +436,29 @@ export const StaffListPage: React.FC = () => {
         </button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <button
+          onClick={() => setDirectoryView('current')}
+          className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            directoryView === 'current'
+              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          Current Staffs ({staffList.filter((s) => s.status === 'Active').length})
+        </button>
+        <button
+          onClick={() => setDirectoryView('old')}
+          className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            directoryView === 'old'
+              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          Old Staffs ({staffList.filter((s) => s.status !== 'Active').length})
+        </button>
+      </div>
+
       {/* Filter and Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
         <div className="relative flex-1 min-w-[200px] sm:min-w-[240px]">
@@ -477,13 +511,20 @@ export const StaffListPage: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Monthly Salary</th>
                 <th className="py-3 px-4 font-semibold">Bank Status</th>
                 <th className="py-3 px-4 font-semibold">Status</th>
+                {directoryView === 'old' && (
+                  <>
+                    <th className="py-3 px-4 font-semibold">Leaving Date</th>
+                    <th className="py-3 px-4 font-semibold">Leaving Reason</th>
+                    <th className="py-3 px-4 font-semibold">Rejoined On</th>
+                  </>
+                )}
                 <th className="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredStaff.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <td colSpan={directoryView === 'old' ? 10 : 7} className="py-8 text-center text-slate-400">
                     No staff records found matching criteria.
                   </td>
                 </tr>
@@ -541,32 +582,57 @@ export const StaffListPage: React.FC = () => {
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-right space-x-2">
-                      <button
-                        onClick={() => openStaffDetail(staff)}
-                        className="px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded transition-colors"
-                      >
-                        Details
-                      </button>
+                    {directoryView === 'old' && (
+                      <>
+                        <td className="py-3 px-4 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                          {staff.leavingDate ? formatKolkataDate(staff.leavingDate) : '—'}
+                        </td>
+                        <td className="py-3 px-4 text-[11px] text-slate-600 dark:text-slate-400 max-w-[220px] whitespace-normal">
+                          {staff.leavingReason || '—'}
+                        </td>
+                        <td className="py-3 px-4 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                          {staff.rejoinedDate ? formatKolkataDate(staff.rejoinedDate) : '—'}
+                        </td>
+                      </>
+                    )}
 
-                      {staff.status === 'Active' ? (
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button
-                          onClick={() => {
-                            setSelectedStaff(staff);
-                            setIsDeactivateModalOpen(true);
-                          }}
-                          className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors"
+                          onClick={() => openStaffDetail(staff)}
+                          className="px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded transition-colors"
                         >
-                          Deactivate
+                          Details
                         </button>
-                      ) : (
+
                         <button
-                          onClick={() => handleReactivateStaff(staff)}
-                          className="px-2.5 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          onClick={() => setEditingStaff(staff)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded transition-colors"
                         >
-                          Restore
+                          <Pencil className="w-3 h-3" />
+                          <span>Edit</span>
                         </button>
-                      )}
+
+                        {staff.status === 'Active' ? (
+                          <button
+                            onClick={() => {
+                              setSelectedStaff(staff);
+                              setIsDeactivateModalOpen(true);
+                            }}
+                            className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors"
+                          >
+                            Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setRejoiningStaff(staff)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded transition-colors"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Rejoin</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -893,6 +959,28 @@ export const StaffListPage: React.FC = () => {
                   <span className="text-slate-400">Work Location:</span>
                   <div className="text-slate-800 dark:text-slate-200">{selectedStaff.workLocation}</div>
                 </div>
+                {selectedStaff.leavingDate && (
+                  <div>
+                    <span className="text-slate-400">Leaving Date:</span>
+                    <div className="font-mono text-slate-800 dark:text-slate-200">
+                      {formatKolkataDate(selectedStaff.leavingDate)}
+                    </div>
+                  </div>
+                )}
+                {selectedStaff.leavingReason && (
+                  <div>
+                    <span className="text-slate-400">Leaving Reason:</span>
+                    <div className="text-slate-800 dark:text-slate-200">{selectedStaff.leavingReason}</div>
+                  </div>
+                )}
+                {selectedStaff.rejoinedDate && (
+                  <div>
+                    <span className="text-slate-400">Rejoined On:</span>
+                    <div className="font-mono text-emerald-600 dark:text-emerald-400">
+                      {formatKolkataDate(selectedStaff.rejoinedDate)}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Audited Bank Details Card */}
@@ -998,7 +1086,32 @@ export const StaffListPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+            <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-end gap-2">
+              {selectedStaff.status === 'Active' && (
+                <button
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    setResignationStaff(selectedStaff);
+                    setResignationDate(new Date().toISOString().slice(0, 10));
+                    setResignationReason('');
+                    setResignationError(null);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100"
+                >
+                  <FileWarning className="w-3.5 h-3.5" />
+                  <span>Raise Resignation</span>
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  setEditingStaff(selectedStaff);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit Staff</span>
+              </button>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
                 className="px-4 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200"
@@ -1187,6 +1300,93 @@ export const StaffListPage: React.FC = () => {
                 Confirm Soft Deactivation
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* STAFF EDIT MODAL */}
+      {editingStaff && (
+        <StaffEditModal
+          staff={editingStaff}
+          allStaff={staffList}
+          onClose={() => setEditingStaff(null)}
+          onSaved={loadStaff}
+        />
+      )}
+
+      {/* REJOIN MODAL */}
+      {rejoiningStaff && (
+        <RejoinStaffModal
+          staff={rejoiningStaff}
+          onClose={() => setRejoiningStaff(null)}
+          onSaved={loadStaff}
+        />
+      )}
+
+      {/* RESIGNATION SUBMISSION MODAL */}
+      {resignationStaff && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Raise Resignation — {resignationStaff.fullName}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                The request will go to HR first, then to the CEO for final approval. Portal access is revoked when the CEO approves.
+              </p>
+            </div>
+
+            {resignationError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
+                {resignationError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitResignation} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Last Working Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={resignationDate}
+                  onChange={(e) => setResignationDate(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Resignation Reason *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={resignationReason}
+                  onChange={(e) => setResignationReason(e.target.value)}
+                  placeholder="e.g. Better opportunity / relocation"
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setResignationStaff(null)}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resignationSaving || !resignationReason.trim()}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50"
+                >
+                  <FileWarning className="w-3.5 h-3.5" />
+                  <span>{resignationSaving ? 'Submitting...' : 'Submit for HR Review'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

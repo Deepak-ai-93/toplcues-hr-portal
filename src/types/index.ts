@@ -40,6 +40,7 @@ export interface StaffProfile {
   status: StaffStatus;
   leavingDate?: string;
   leavingReason?: string;
+  rejoinedDate?: string;
   notes?: string;
   profilePhotoUrl?: string;
 
@@ -68,6 +69,69 @@ export interface SalaryHistoryEntry {
   changedBy: string;
   changedAt: string;
   reason: string;
+}
+
+export type ResignationStatus = 'PENDING_HR' | 'PENDING_CEO' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
+
+export interface ResignationRequest {
+  id: string;
+  staffId: string;
+  requestedByUid?: string;
+  requestedByEmail: string;
+  requestedByRole: UserRole;
+  initiator: 'SELF' | 'ON_BEHALF';
+  reason: string;
+  lastWorkingDate: string;
+  status: ResignationStatus;
+  hrReviewedBy?: string;
+  hrReviewedAt?: string;
+  hrNote?: string;
+  ceoReviewedBy?: string;
+  ceoReviewedAt?: string;
+  ceoNote?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionStage?: 'HR' | 'CEO';
+  rejectionNote?: string;
+  withdrawnAt?: string;
+  submittedAt: string;
+  updatedAt: string;
+}
+
+export type LeaveType = 'CL' | 'EL' | 'LWP';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export interface LeaveRequest {
+  id: string;
+  staffId: string;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+  leaveMonth: string;
+  reason: string;
+  status: LeaveStatus;
+  appliedByUid?: string;
+  appliedByEmail: string;
+  appliedOnBehalf: boolean;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeaveBalance {
+  month: string;
+  clAllowed: number;
+  elAllowed: number;
+  clDays: number;
+  elDays: number;
+  elWithinCl: number;
+  lwpDays: number;
+  clRemaining: number;
+  elRemaining: number;
 }
 
 export interface BankChangeRequest {
@@ -267,7 +331,7 @@ export interface AuditLogEntry {
   actorEmail: string;
   actorRole: UserRole | 'SYSTEM';
   action: string;
-  entityType: 'STAFF' | 'PAYROLL' | 'SALARY_SLIP' | 'EMAIL' | 'TERMS' | 'SETTINGS' | 'BANK' | 'AUTH';
+  entityType: 'STAFF' | 'PAYROLL' | 'SALARY_SLIP' | 'EMAIL' | 'TERMS' | 'SETTINGS' | 'BANK' | 'AUTH' | 'LEAVE' | 'RESIGNATION';
   entityId: string;
   timestamp: string;
   details: string;
