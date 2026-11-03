@@ -31,6 +31,7 @@ import {
 import { logAuditEvent } from '../../lib/auditLogger';
 import { formatIndianCurrency, formatKolkataDate } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
+import { DecimalInput } from '../../components/DecimalInput';
 
 export const StaffListPage: React.FC = () => {
   const { userProfile, role } = useAuth();
@@ -212,6 +213,7 @@ export const StaffListPage: React.FC = () => {
       // 2. Initial salary history record
       await addSalaryHistory({
         id: `sal_${Date.now()}`,
+        staffId,
         monthlySalary: Number(formData.monthlySalary),
         effectiveFrom: formData.salaryEffectiveDate,
         changedBy: userProfile?.email || 'hr@topclues.in',
@@ -345,6 +347,7 @@ export const StaffListPage: React.FC = () => {
       const historyId = `sal_${Date.now()}`;
       await addSalaryHistory({
         id: historyId,
+        staffId: selectedStaff.id,
         monthlySalary: newSalary,
         effectiveFrom: salaryEffectiveDate,
         changedBy: userProfile?.email || 'hr@topclues.in',
@@ -719,13 +722,11 @@ export const StaffListPage: React.FC = () => {
                     <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
                       Monthly Salary (INR / ₹) *
                     </label>
-                    <input
-                      type="number"
+                    <DecimalInput
                       required
-                      min="1"
-                      step="100"
                       value={formData.monthlySalary}
-                      onChange={(e) => setFormData({ ...formData, monthlySalary: Number(e.target.value) })}
+                      onChange={(monthlySalary) => setFormData({ ...formData, monthlySalary })}
+                      placeholder="e.g. 40000"
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                     />
                   </div>
@@ -1079,12 +1080,11 @@ export const StaffListPage: React.FC = () => {
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   New Monthly Salary (INR / ₹) *
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  step="500"
+                <DecimalInput
+                  required
                   value={newSalary}
-                  onChange={(e) => setNewSalary(Number(e.target.value))}
+                  onChange={setNewSalary}
+                  placeholder="e.g. 45000"
                   className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                 />
               </div>

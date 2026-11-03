@@ -61,6 +61,7 @@ export interface StaffProfile {
 
 export interface SalaryHistoryEntry {
   id: string;
+  staffId: string;
   monthlySalary: number;
   effectiveFrom: string;
   effectiveTo?: string;
