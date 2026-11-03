@@ -15,11 +15,11 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { CompanySettings, PayrollRecord, TermsVersion } from '../../types';
-import { getCompanySettings, getTerm, listPayrollRecords } from '../../lib/api';
+import { CompanySettings, PayrollRecord, PayrollRuleConfig, TermsVersion } from '../../types';
+import { getCompanySettings, getPayrollRules, getTerm, listPayrollRecords } from '../../lib/api';
 import { queueOrSendSalarySlipEmail } from '../../lib/emailService';
 import { generateSalarySlipPDF, getSalarySlipFileName } from '../../lib/pdfGenerator';
-import { formatIndianCurrency } from '../../lib/payrollCalculator';
+import { DEFAULT_PAYROLL_RULES, formatIndianCurrency } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
 
 export const SalarySlipsPage: React.FC = () => {
@@ -28,6 +28,7 @@ export const SalarySlipsPage: React.FC = () => {
   const [records, setRecords] = useState<PayrollRecord[]>([]);
   const [company, setCompanySettings] = useState<CompanySettings | null>(null);
   const [terms, setTerms] = useState<TermsVersion | null>(null);
+  const [rules, setRules] = useState<PayrollRuleConfig>(DEFAULT_PAYROLL_RULES);
   const [loading, setLoading] = useState<boolean>(true);
   const [sendingEmailStaffId, setSendingEmailStaffId] = useState<string | null>(null);
 
@@ -43,6 +44,9 @@ export const SalarySlipsPage: React.FC = () => {
 
       const termsVersion = await getTerm('terms-v1.0');
       if (termsVersion) setTerms(termsVersion);
+
+      const loadedRules = (await getPayrollRules(DEFAULT_PAYROLL_RULES.id)) ?? DEFAULT_PAYROLL_RULES;
+      setRules(loadedRules);
 
       const list = await listPayrollRecords(pId);
       setRecords(list);
@@ -73,6 +77,7 @@ export const SalarySlipsPage: React.FC = () => {
       terms: terms || undefined,
       slipNumber,
       version: record.slipVersion || 1,
+      rules,
     });
 
     const fileName = getSalarySlipFileName(record.fullName, monthName, year);

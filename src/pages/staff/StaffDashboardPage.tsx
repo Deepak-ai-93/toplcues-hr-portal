@@ -17,10 +17,10 @@ import {
   UserCheck
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { CompanySettings, PayrollRecord, TermsVersion } from '../../types';
-import { getCompanySettings, getPayrollRecord, getTerm } from '../../lib/api';
+import { CompanySettings, PayrollRecord, PayrollRuleConfig, TermsVersion } from '../../types';
+import { getCompanySettings, getPayrollRecord, getPayrollRules, getTerm } from '../../lib/api';
 import { generateSalarySlipPDF, getSalarySlipFileName } from '../../lib/pdfGenerator';
-import { formatIndianCurrency, formatKolkataDate, formatKolkataDateTime } from '../../lib/payrollCalculator';
+import { DEFAULT_PAYROLL_RULES, formatIndianCurrency, formatKolkataDate, formatKolkataDateTime } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
 
 export const StaffDashboardPage: React.FC = () => {
@@ -28,6 +28,7 @@ export const StaffDashboardPage: React.FC = () => {
   const [latestRecord, setLatestRecord] = useState<PayrollRecord | null>(null);
   const [company, setCompanySettings] = useState<CompanySettings | null>(null);
   const [terms, setTerms] = useState<TermsVersion | null>(null);
+  const [rules, setRules] = useState<PayrollRuleConfig>(DEFAULT_PAYROLL_RULES);
   const [loading, setLoading] = useState<boolean>(true);
 
   const activePeriodId = '2026-07';
@@ -44,6 +45,9 @@ export const StaffDashboardPage: React.FC = () => {
 
       const termsVersion = await getTerm('terms-v1.0');
       if (termsVersion) setTerms(termsVersion);
+
+      const loadedRules = (await getPayrollRules(DEFAULT_PAYROLL_RULES.id)) ?? DEFAULT_PAYROLL_RULES;
+      setRules(loadedRules);
 
       if (staffProfile) {
         // Read the caller's own payroll record (enforced by RLS)
@@ -68,6 +72,7 @@ export const StaffDashboardPage: React.FC = () => {
       terms: terms || undefined,
       slipNumber: `TCS-${activePeriodId}-${latestRecord.employeeCode}-v${latestRecord.slipVersion || 1}`,
       version: latestRecord.slipVersion || 1,
+      rules,
     });
 
     const fileName = getSalarySlipFileName(latestRecord.fullName, 'July', 2026);

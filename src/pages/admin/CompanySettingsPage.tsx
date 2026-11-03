@@ -350,6 +350,104 @@ export const CompanySettingsPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  CL + Monsoon Allowance (days)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  disabled={!isSuperAdmin}
+                  value={rules.clAllowedPerMonth}
+                  onChange={(e) =>
+                    setRules({ ...rules, clAllowedPerMonth: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  EL Permission Allowance (days)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  disabled={!isSuperAdmin}
+                  value={rules.elAllowedWithinCL}
+                  onChange={(e) =>
+                    setRules({ ...rules, elAllowedWithinCL: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  EL Excess Deduction Multiplier (x)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  disabled={!isSuperAdmin}
+                  value={rules.excessELMultiplier}
+                  onChange={(e) =>
+                    setRules({ ...rules, excessELMultiplier: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Late Allowance (occurrences)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  disabled={!isSuperAdmin}
+                  value={rules.lateAllowedGrace}
+                  onChange={(e) =>
+                    setRules({ ...rules, lateAllowedGrace: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Lates per Deduction Block
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  disabled={!isSuperAdmin}
+                  value={rules.latesPerDeductionBlock}
+                  onChange={(e) =>
+                    setRules({ ...rules, latesPerDeductionBlock: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Deduction Days per Late Block
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  disabled={!isSuperAdmin}
+                  value={rules.latePenaltyDaysPerPair}
+                  onChange={(e) =>
+                    setRules({ ...rules, latePenaltyDaysPerPair: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Extra Break Deduction (₹/hr)
                 </label>
                 <input

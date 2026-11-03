@@ -4,7 +4,7 @@
  */
 
 import { jsPDF } from 'jspdf';
-import { CompanySettings, PayrollRecord, TermsVersion } from '../types';
+import { CompanySettings, PayrollRecord, PayrollRuleConfig, TermsVersion } from '../types';
 import {
   amountToIndianWords,
   formatIndianCurrency,
@@ -20,6 +20,7 @@ export interface SalarySlipPDFData {
   terms?: TermsVersion;
   slipNumber: string;
   version: number;
+  rules?: PayrollRuleConfig;
 }
 
 /**
@@ -86,7 +87,15 @@ function renderTextImage(
  * Deterministically generates an A4 PDF Salary Slip
  */
 export function generateSalarySlipPDF(data: SalarySlipPDFData): jsPDF {
-  const { record, monthName, year, company, terms, slipNumber, version } = data;
+  const { record, monthName, year, company, terms, slipNumber, version, rules } = data;
+
+  const extraHoursRate = rules?.extraHoursRatePerHour ?? 100;
+  const holidayMultiplier = rules?.holidayWorkingDayMultiplier ?? 1.5;
+  const outdoorRate = rules?.outdoorWorkRatePerDay ?? 500;
+  const holidayHourlyRate = rules?.holidayHourlyRate ?? 150;
+  const extraBreakRate = rules?.extraBreakRatePerHour ?? 50;
+  const earlyLeaveRate = rules?.earlyLeaveRatePerHour ?? 50;
+  const elMultiplier = rules?.excessELMultiplier ?? 1.5;
 
   // Create A4 portrait document (210mm x 297mm)
   const doc = new jsPDF({
@@ -203,20 +212,20 @@ export function generateSalarySlipPDF(data: SalarySlipPDFData): jsPDF {
   // Table Data Rows
   const earningsList: [string, number][] = [
     ['Basic Monthly Salary', record.monthlySalary],
-    ['Extra Working Hours (' + (record.extraHours || 0) + ' hrs @ ₹100/hr)', record.extraHoursPayment],
-    ['Full Holiday Working (' + (record.holidayWorkingDays || 0) + ' days @ 1.5x)', record.holidayDayPayment],
-    ['Outdoor Duty (' + (record.outdoorWorkingDays || 0) + ' days @ ₹500/day)', record.outdoorPayment],
-    ['Holiday Hourly Duty (' + (record.holidayWorkingHours || 0) + ' hrs @ ₹150/hr)', record.holidayHourlyPayment],
+    ['Extra Working Hours (' + (record.extraHours || 0) + ' hrs @ ₹' + extraHoursRate + '/hr)', record.extraHoursPayment],
+    ['Full Holiday Working (' + (record.holidayWorkingDays || 0) + ' days @ ' + holidayMultiplier + 'x)', record.holidayDayPayment],
+    ['Outdoor Duty (' + (record.outdoorWorkingDays || 0) + ' days @ ₹' + outdoorRate + '/day)', record.outdoorPayment],
+    ['Holiday Hourly Duty (' + (record.holidayWorkingHours || 0) + ' hrs @ ₹' + holidayHourlyRate + '/hr)', record.holidayHourlyPayment],
     ['Extra Payment / Allowance', record.extraPayment],
   ];
 
   const deductionsList: [string, number][] = [
     ['LWP Days (' + (record.lwpDays || 0) + ' days)', record.lwpDeduction],
     ['Excess CL (' + (record.excessCLDays || 0) + ' days beyond quota)', record.excessCLDeduction],
-    ['Excess EL (' + (record.extraELCount || 0) + ' count @ 1.5x)', record.extraELDeduction],
+    ['Excess EL (' + (record.extraELCount || 0) + ' count @ ' + elMultiplier + 'x)', record.extraELDeduction],
     ['Late Arrivals (' + (record.lateCount || 0) + ' count, ' + (record.chargeableLateDays || 0) + ' days chg)', record.lateDeduction],
-    ['Extra Break (' + (record.extraBreakHours || 0) + ' hrs @ ₹50/hr)', record.extraBreakDeduction],
-    ['Early Leave (' + (record.earlyLeaveHours || 0) + ' hrs @ ₹50/hr)', record.earlyLeaveDeduction],
+    ['Extra Break (' + (record.extraBreakHours || 0) + ' hrs @ ₹' + extraBreakRate + '/hr)', record.extraBreakDeduction],
+    ['Early Leave (' + (record.earlyLeaveHours || 0) + ' hrs @ ₹' + earlyLeaveRate + '/hr)', record.earlyLeaveDeduction],
   ];
 
   const maxRows = Math.max(earningsList.length, deductionsList.length);

@@ -5,10 +5,10 @@
 
 import { Calendar, Download, FileText } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { CompanySettings, PayrollRecord, TermsVersion } from '../../types';
-import { getCompanySettings, getPayrollRecord, getTerm } from '../../lib/api';
+import { CompanySettings, PayrollRecord, PayrollRuleConfig, TermsVersion } from '../../types';
+import { getCompanySettings, getPayrollRecord, getPayrollRules, getTerm } from '../../lib/api';
 import { generateSalarySlipPDF, getSalarySlipFileName } from '../../lib/pdfGenerator';
-import { formatIndianCurrency, formatKolkataDate } from '../../lib/payrollCalculator';
+import { DEFAULT_PAYROLL_RULES, formatIndianCurrency, formatKolkataDate } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
 
 export const StaffSalaryHistoryPage: React.FC = () => {
@@ -16,6 +16,7 @@ export const StaffSalaryHistoryPage: React.FC = () => {
   const [historyRecords, setHistoryRecords] = useState<PayrollRecord[]>([]);
   const [company, setCompanySettings] = useState<CompanySettings | null>(null);
   const [terms, setTerms] = useState<TermsVersion | null>(null);
+  const [rules, setRules] = useState<PayrollRuleConfig>(DEFAULT_PAYROLL_RULES);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -31,6 +32,9 @@ export const StaffSalaryHistoryPage: React.FC = () => {
 
       const termsVersion = await getTerm('terms-v1.0');
       if (termsVersion) setTerms(termsVersion);
+
+      const loadedRules = (await getPayrollRules(DEFAULT_PAYROLL_RULES.id)) ?? DEFAULT_PAYROLL_RULES;
+      setRules(loadedRules);
 
       // Scoped only to the authenticated staff member by RLS
       const periodId = '2026-07';
@@ -53,6 +57,7 @@ export const StaffSalaryHistoryPage: React.FC = () => {
       terms: terms || undefined,
       slipNumber: `TCS-${record.periodId}-${record.employeeCode}-v${record.slipVersion || 1}`,
       version: record.slipVersion || 1,
+      rules,
     });
 
     const fileName = getSalarySlipFileName(record.fullName, 'July', 2026);

@@ -24,6 +24,7 @@ export const DEFAULT_PAYROLL_RULES: PayrollRuleConfig = {
   elAllowedWithinCL: 1,
   excessELMultiplier: 1.5,
   lateAllowedGrace: 2,
+  latesPerDeductionBlock: 2,
   latePenaltyDaysPerPair: 0.5,
   extraBreakRatePerHour: 50,
   earlyLeaveRatePerHour: 50,
@@ -68,9 +69,11 @@ export function calculatePayroll(
   const extraELCount = Math.max(0, elCount - rules.elAllowedWithinCL);
   const extraELDeduction = roundToPaise(perDaySalary * extraELCount * rules.excessELMultiplier);
 
-  // Late calculation: 2 late arrivals allowed. Every complete pair beyond 2 deducts 0.5 day
+  // Late calculation: late allowance is forgiven, then every complete block
+  // beyond it deducts the configured number of day salaries.
   const lateCount = Math.max(0, inputs.lateCount || 0);
-  const chargeableLateDays = Math.floor(Math.max(0, lateCount - rules.lateAllowedGrace) / 2) * rules.latePenaltyDaysPerPair;
+  const latesPerBlock = Math.max(1, rules.latesPerDeductionBlock || 2);
+  const chargeableLateDays = Math.floor(Math.max(0, lateCount - rules.lateAllowedGrace) / latesPerBlock) * rules.latePenaltyDaysPerPair;
   const lateDeduction = roundToPaise(perDaySalary * chargeableLateDays);
 
   // Extra break & Early leave

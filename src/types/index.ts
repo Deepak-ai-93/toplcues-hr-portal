@@ -228,6 +228,7 @@ export interface PayrollRuleConfig {
   elAllowedWithinCL: number; // default: 1
   excessELMultiplier: number; // default: 1.5
   lateAllowedGrace: number; // default: 2
+  latesPerDeductionBlock: number; // default: 2
   latePenaltyDaysPerPair: number; // default: 0.5
   extraBreakRatePerHour: number; // default: 50
   earlyLeaveRatePerHour: number; // default: 50

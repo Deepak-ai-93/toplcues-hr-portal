@@ -21,10 +21,11 @@ import {
   Unlock
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { CompanySettings, PayrollCalculationBreakdown, PayrollPeriod, PayrollRecord, StaffProfile, TermsVersion } from '../../types';
+import { CompanySettings, PayrollCalculationBreakdown, PayrollPeriod, PayrollRecord, PayrollRuleConfig, StaffProfile, TermsVersion } from '../../types';
 import {
   getCompanySettings,
   getPayrollPeriod,
+  getPayrollRules,
   getTerm,
   listPayrollRecords,
   listStaff,
@@ -91,6 +92,7 @@ export const PayrollEntryPage: React.FC = () => {
   const [staffList, setStaffList] = useState<StaffProfile[]>([]);
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [terms, setTerms] = useState<TermsVersion | null>(null);
+  const [rules, setRules] = useState<PayrollRuleConfig>(DEFAULT_PAYROLL_RULES);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -119,6 +121,10 @@ export const PayrollEntryPage: React.FC = () => {
       const termsVersion = await getTerm('terms-v1.0');
       if (termsVersion) setTerms(termsVersion);
 
+      // 2b. Load the active rule set so settings edits drive the calculations.
+      const loadedRules = (await getPayrollRules(DEFAULT_PAYROLL_RULES.id)) ?? DEFAULT_PAYROLL_RULES;
+      setRules(loadedRules);
+
       // 3. Load Staff
       const allStaff = await listStaff();
       const activeStaff = allStaff.filter((s) => s.status === 'Active');
@@ -145,7 +151,7 @@ export const PayrollEntryPage: React.FC = () => {
           year: parseInt(yearStr, 10),
           daysInMonth: days,
           status: 'Draft',
-          ruleVersionId: DEFAULT_PAYROLL_RULES.id,
+          ruleVersionId: loadedRules.id,
           termsVersionId: 'terms-v1.0',
           totalEmployees: activeStaff.length,
           totalBaseSalary: 0,
@@ -166,10 +172,34 @@ export const PayrollEntryPage: React.FC = () => {
         recordMap[record.staffId] = record;
       });
 
-      // Synchronize with active staff
+      // Synchronize with active staff. Draft/calculated periods are recomputed
+      // with the current rules so settings changes take effect immediately.
+      const shouldRecalculate = currentPeriod.status === 'Draft' || currentPeriod.status === 'Calculated';
       const synchedRecords: PayrollRecord[] = activeStaff.map((staff) => {
-        if (recordMap[staff.id]) {
-          return recordMap[staff.id];
+        const existing = recordMap[staff.id];
+        if (existing) {
+          if (!shouldRecalculate) return existing;
+
+          const recalculated = calculatePayroll(
+            {
+              monthlySalary: existing.monthlySalary,
+              lwpDays: existing.lwpDays,
+              clDays: existing.clDays,
+              elCount: existing.elCount,
+              lateCount: existing.lateCount,
+              extraBreakHours: existing.extraBreakHours,
+              earlyLeaveHours: existing.earlyLeaveHours,
+              extraPayment: existing.extraPayment,
+              extraHours: existing.extraHours,
+              holidayWorkingDays: existing.holidayWorkingDays,
+              outdoorWorkingDays: existing.outdoorWorkingDays,
+              holidayWorkingHours: existing.holidayWorkingHours,
+            },
+            days,
+            loadedRules
+          );
+
+          return { ...existing, ...recalculated, ruleVersionId: loadedRules.id };
         }
 
         // Initialize new record
@@ -189,7 +219,7 @@ export const PayrollEntryPage: React.FC = () => {
           remarks: '',
         };
 
-        const calc = calculatePayroll(inputs, days, DEFAULT_PAYROLL_RULES);
+        const calc = calculatePayroll(inputs, days, loadedRules);
 
         return {
           id: staff.id,
@@ -209,7 +239,7 @@ export const PayrollEntryPage: React.FC = () => {
           slipStatus: 'NotGenerated',
           emailStatus: 'NotSent',
           termsVersionId: 'terms-v1.0',
-          ruleVersionId: DEFAULT_PAYROLL_RULES.id,
+          ruleVersionId: loadedRules.id,
           updatedAt: new Date().toISOString(),
         };
       });
@@ -255,7 +285,7 @@ export const PayrollEntryPage: React.FC = () => {
             holidayWorkingHours: updated.holidayWorkingHours,
           },
           period?.daysInMonth || 31,
-          DEFAULT_PAYROLL_RULES
+          rules
         );
 
         return {
@@ -624,16 +654,16 @@ export const PayrollEntryPage: React.FC = () => {
                 </th>
                 <th className="py-2.5 px-3 font-semibold text-right">Base Salary</th>
                 <th className="py-2.5 px-3 font-semibold text-center">LWP</th>
-                <th className="py-2.5 px-3 font-semibold text-center">CL (Max 2)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">EL (1.5x)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Late (2 Gr.)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Extra Brk (₹50)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Early Lv (₹50)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">CL (Max {rules.clAllowedPerMonth})</th>
+                <th className="py-2.5 px-3 font-semibold text-center">EL ({rules.excessELMultiplier}x)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Late ({rules.lateAllowedGrace} Gr.)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Extra Brk (₹{rules.extraBreakRatePerHour})</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Early Lv (₹{rules.earlyLeaveRatePerHour})</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Extra Pay (₹)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">OT Hrs (₹100)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Hol Days (1.5x)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Outdoor (₹500)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Hol Hrs (₹150)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">OT Hrs (₹{rules.extraHoursRatePerHour})</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Hol Days ({rules.holidayWorkingDayMultiplier}x)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Outdoor (₹{rules.outdoorWorkRatePerDay})</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Hol Hrs (₹{rules.holidayHourlyRate})</th>
                 <th className="py-2.5 px-3 font-semibold text-right text-emerald-700 dark:text-emerald-400">
                   +Additions
                 </th>
@@ -845,7 +875,7 @@ export const PayrollEntryPage: React.FC = () => {
                     <span className="font-mono tabular-nums">-{formatIndianCurrency(previewRecord.excessCLDeduction)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Excess EL ({previewRecord.extraELCount} count × 1.5x Per-Day):</span>
+                    <span>Excess EL ({previewRecord.extraELCount} count × {rules.excessELMultiplier}x Per-Day):</span>
                     <span className="font-mono tabular-nums">-{formatIndianCurrency(previewRecord.extraELDeduction)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
@@ -853,11 +883,11 @@ export const PayrollEntryPage: React.FC = () => {
                     <span className="font-mono tabular-nums">-{formatIndianCurrency(previewRecord.lateDeduction)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Extra Breaks ({previewRecord.extraBreakHours} hrs × ₹50):</span>
+                    <span>Extra Breaks ({previewRecord.extraBreakHours} hrs × ₹{rules.extraBreakRatePerHour}):</span>
                     <span className="font-mono tabular-nums">-{formatIndianCurrency(previewRecord.extraBreakDeduction)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Early Leaves ({previewRecord.earlyLeaveHours} hrs × ₹50):</span>
+                    <span>Early Leaves ({previewRecord.earlyLeaveHours} hrs × ₹{rules.earlyLeaveRatePerHour}):</span>
                     <span className="font-mono tabular-nums">-{formatIndianCurrency(previewRecord.earlyLeaveDeduction)}</span>
                   </div>
                 </div>
@@ -874,19 +904,19 @@ export const PayrollEntryPage: React.FC = () => {
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.extraPayment)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Overtime ({previewRecord.extraHours} hrs × ₹100):</span>
+                    <span>Overtime ({previewRecord.extraHours} hrs × ₹{rules.extraHoursRatePerHour}):</span>
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.extraHoursPayment)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Full Holiday ({previewRecord.holidayWorkingDays} days × 1.5x Per-Day):</span>
+                    <span>Full Holiday ({previewRecord.holidayWorkingDays} days × {rules.holidayWorkingDayMultiplier}x Per-Day):</span>
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.holidayDayPayment)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Outdoor Field Duty ({previewRecord.outdoorWorkingDays} days × ₹500):</span>
+                    <span>Outdoor Field Duty ({previewRecord.outdoorWorkingDays} days × ₹{rules.outdoorWorkRatePerDay}):</span>
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.outdoorPayment)}</span>
                   </div>
                   <div className="p-2.5 flex justify-between">
-                    <span>Holiday Hourly ({previewRecord.holidayWorkingHours} hrs × ₹150):</span>
+                    <span>Holiday Hourly ({previewRecord.holidayWorkingHours} hrs × ₹{rules.holidayHourlyRate}):</span>
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.holidayHourlyPayment)}</span>
                   </div>
                 </div>
