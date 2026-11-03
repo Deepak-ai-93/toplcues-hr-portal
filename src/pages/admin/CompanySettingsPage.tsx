@@ -205,7 +205,7 @@ export const CompanySettingsPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Company Official Email
@@ -233,7 +233,7 @@ export const CompanySettingsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
               <div>
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Authorized Signatory Name
@@ -269,7 +269,7 @@ export const CompanySettingsPage: React.FC = () => {
               <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Authorized Signature (PNG)
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-16 w-40 shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden">
                   {settings.authorizedSignatorySignatureUrl ? (
                     <img
@@ -347,7 +347,7 @@ export const CompanySettingsPage: React.FC = () => {
               Note: Changes to calculation rates apply to future draft cycles only. Finalized periods retain their immutable snapshot.
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                   CL + Monsoon Allowance (days)

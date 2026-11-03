@@ -113,7 +113,7 @@ export const EmailHistoryPage: React.FC = () => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         <button
           onClick={() => setFilterStatus('ALL')}
           className={`px-3 py-1 rounded-md transition-colors ${

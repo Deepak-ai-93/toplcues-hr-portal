@@ -119,7 +119,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       </div>
 
       {/* KPI Summary Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {/* Active Staff */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="text-[11px] font-medium text-slate-500 flex items-center justify-between">
@@ -171,7 +171,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Total Net Payout */}
-        <div className="col-span-2 sm:col-span-1 bg-indigo-50/70 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs">
+        <div className="bg-indigo-50/70 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs">
           <div className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
             <span>Net Payout</span>
             <Banknote className="w-4 h-4 text-indigo-600" />
@@ -278,7 +278,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               Configured for 31 payroll days under rule specification v1.0.
             </p>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                 <div className="text-slate-400 text-[11px]">Period Identifier</div>
                 <div className="font-mono font-semibold text-slate-800 dark:text-slate-200 mt-0.5">

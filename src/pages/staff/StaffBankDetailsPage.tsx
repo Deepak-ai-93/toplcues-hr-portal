@@ -262,7 +262,7 @@ export const StaffBankDetailsPage: React.FC = () => {
       {/* REQUEST UPDATE MODAL */}
       {isRequestModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Submit Bank Detail Change Request
             </h3>
@@ -306,7 +306,7 @@ export const StaffBankDetailsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                     New Account Number *
@@ -336,7 +336,7 @@ export const StaffBankDetailsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                     IFSC Code *

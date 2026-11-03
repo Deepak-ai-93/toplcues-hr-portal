@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Building2, LogOut, Shield, UserCheck, Users } from 'lucide-react';
+import { Building2, LogOut, Menu, Shield, UserCheck, Users } from 'lucide-react';
 import React from 'react';
 import { useAuth } from '../../lib/authContext';
 
@@ -12,22 +12,30 @@ interface NavbarProps {
   activePeriod?: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activePeriod }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activePeriod, onToggleSidebar }) => {
   const { userProfile, role, signOutUser, simulatePersona } = useAuth();
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between gap-8 sticky top-0 z-30">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between gap-3 sm:gap-6 sticky top-0 z-30">
       {/* Zone 1: Single text element wordmark */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-label="Open navigation menu"
+          className="lg:hidden -ml-1 p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
         <img
           src="/brand/topclues-icon-512.png"
           alt="Topclues"
-          className="w-9 h-9 object-contain"
+          className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
         />
-        <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
+        <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
           Topclues Solutions
         </span>
-        <span className="hidden sm:inline-block text-xs text-slate-400 dark:text-slate-500 font-normal">
+        <span className="hidden lg:inline-block text-xs text-slate-400 dark:text-slate-500 font-normal">
           Payroll Management
         </span>
       </div>
@@ -50,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePeriod }) => {
           <span className="font-semibold text-slate-800 dark:text-slate-200">
             {role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'HR' ? 'HR Manager' : 'Staff Employee'}
           </span>
-          <span className="text-slate-400">({userProfile?.email})</span>
+          <span className="hidden xl:inline text-slate-400">({userProfile?.email})</span>
         </div>
       </div>
 

@@ -245,7 +245,7 @@ export const StaffDashboardPage: React.FC = () => {
                 Attendance & Permissions Log
               </h2>
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                   <div className="text-slate-400">Casual Leave (CL)</div>
                   <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">

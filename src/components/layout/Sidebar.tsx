@@ -18,7 +18,8 @@ import {
   Settings,
   ShieldCheck,
   UserCheck,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 import React from 'react';
 import { useAuth } from '../../lib/authContext';
@@ -44,9 +45,11 @@ export type ActiveTab =
 interface SidebarProps {
   currentTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, isOpen, onClose }) => {
   const { role } = useAuth();
   const isManagement = role === 'SUPER_ADMIN' || role === 'HR';
 
@@ -73,9 +76,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
   ];
 
   return (
-    <aside className="w-64 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between py-4 select-none shrink-0">
-      <div className="px-3 space-y-6">
-        <div>
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 top-16 z-30 bg-slate-900/50 backdrop-blur-xs lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed top-16 bottom-0 left-0 z-40 flex w-72 max-w-[85vw] shrink-0 select-none flex-col justify-between overflow-y-auto bg-slate-50 py-4 transition-transform duration-200 ease-out dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 lg:static lg:z-auto lg:w-64 lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-3 space-y-6">
+          <div className="flex items-center justify-between px-3 lg:hidden">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Menu
+            </span>
+            <button
+              onClick={onClose}
+              aria-label="Close navigation menu"
+              className="p-1 rounded text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div>
           <div className="px-3 mb-2 text-[11px] font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">
             {isManagement ? 'Management Console' : 'Employee Self-Service'}
           </div>
@@ -130,6 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
         <div>Topclues Solutions Pvt. Ltd.</div>
         <div className="mt-0.5">Version 1.0 · India (₹ INR)</div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };

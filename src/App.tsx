@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { ActiveTab, Sidebar } from './components/layout/Sidebar';
 import { AuthProvider, useAuth } from './lib/authContext';
@@ -28,6 +28,16 @@ import { StaffTermsPage } from './pages/staff/StaffTermsPage';
 const AppContent: React.FC = () => {
   const { currentUser, role, isLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<ActiveTab>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSidebarOpen]);
 
   if (isLoading) {
     return (
@@ -99,10 +109,21 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Navbar activePeriod="July 2026" />
+      <Navbar
+        activePeriod="July 2026"
+        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+      />
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar currentTab={effectiveTab} onSelectTab={(tab) => setCurrentTab(tab)} />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <Sidebar
+          currentTab={effectiveTab}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          onSelectTab={(tab) => {
+            setCurrentTab(tab);
+            setIsSidebarOpen(false);
+          }}
+        />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">{renderPage()}</div>
         </main>
       </div>

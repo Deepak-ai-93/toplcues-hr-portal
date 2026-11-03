@@ -424,7 +424,7 @@ export const StaffListPage: React.FC = () => {
 
       {/* Filter and Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-[200px] sm:min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -873,7 +873,7 @@ export const StaffListPage: React.FC = () => {
 
             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto text-xs">
               {/* Profile Details Grid */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
                 <div>
                   <span className="text-slate-400">Google Email:</span>
                   <div className="font-mono text-slate-800 dark:text-slate-200">{selectedStaff.googleEmail}</div>
@@ -919,7 +919,7 @@ export const StaffListPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-slate-700 dark:text-slate-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700 dark:text-slate-300">
                   <div>
                     <span className="text-slate-400">Bank Name:</span>
                     <div>{selectedStaff.bankName || 'Not configured'}</div>
@@ -1012,7 +1012,7 @@ export const StaffListPage: React.FC = () => {
       {/* BANK REVEAL AUDITED WORKFLOW MODAL */}
       {isBankRevealModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />
@@ -1066,7 +1066,7 @@ export const StaffListPage: React.FC = () => {
       {/* RECORD SALARY REVISION MODAL */}
       {isSalaryModalOpen && selectedStaff && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Record Compensation Revision for {selectedStaff.fullName}
             </h3>
@@ -1137,7 +1137,7 @@ export const StaffListPage: React.FC = () => {
       {/* SOFT DEACTIVATION MODAL */}
       {isDeactivateModalOpen && selectedStaff && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-red-600">
               Deactivate Staff Member ({selectedStaff.fullName})
             </h3>
