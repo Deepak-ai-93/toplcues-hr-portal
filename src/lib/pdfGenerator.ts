@@ -31,6 +31,58 @@ export function getSalarySlipFileName(fullName: string, monthName: string, year:
 }
 
 /**
+ * Rasterizes a line of text with the browser's text shaper. jsPDF's built-in
+ * fonts have no Devanagari glyphs or shaping, so Sanskrit footers would render
+ * broken if drawn with doc.text().
+ */
+function renderTextImage(
+  text: string,
+  fontPx: number,
+  maxWidthMm: number
+): { dataUrl: string; widthMm: number; heightMm: number } | null {
+  if (typeof document === 'undefined') return null;
+
+  try {
+    const fontStack =
+      '"Noto Sans Devanagari", "Nirmala UI", "Mangal", "Kohinoor Devanagari", "Devanagari Sangam MN", sans-serif';
+    const paddingPx = 8;
+    const canvas = document.createElement('canvas');
+    const measureCtx = canvas.getContext('2d');
+    if (!measureCtx) return null;
+
+    measureCtx.font = `${fontPx}px ${fontStack}`;
+    const textWidth = Math.ceil(measureCtx.measureText(text).width);
+    const lineHeight = Math.ceil(fontPx * 1.45);
+
+    canvas.width = textWidth + paddingPx * 2;
+    canvas.height = lineHeight + paddingPx * 2;
+
+    // Resizing the canvas resets its context, so the font must be set again.
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.font = `${fontPx}px ${fontStack}`;
+    ctx.fillStyle = '#94a3b8';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, paddingPx, canvas.height / 2);
+
+    // Target 7pt in the PDF, scaled down if the line would exceed the margin.
+    const mmPerPx = (7 * 0.3528) / fontPx;
+    let widthMm = canvas.width * mmPerPx;
+    let heightMm = canvas.height * mmPerPx;
+
+    if (widthMm > maxWidthMm) {
+      const scale = maxWidthMm / widthMm;
+      widthMm *= scale;
+      heightMm *= scale;
+    }
+
+    return { dataUrl: canvas.toDataURL('image/png'), widthMm, heightMm };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Deterministically generates an A4 PDF Salary Slip
  */
 export function generateSalarySlipPDF(data: SalarySlipPDFData): jsPDF {
@@ -325,11 +377,26 @@ export function generateSalarySlipPDF(data: SalarySlipPDFData): jsPDF {
 
   // Footer text
   const footerY = pageHeight - margin - 4;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
   const footerNote = company.salarySlipFooter || 'Confidential – Strictly for employee reference only. Topclues Solutions.';
-  doc.text(footerNote, pageWidth / 2, footerY, { align: 'center' });
+  const footerImage = /[\u0900-\u097F]/.test(footerNote)
+    ? renderTextImage(footerNote, 40, contentWidth - 8)
+    : null;
+
+  if (footerImage) {
+    doc.addImage(
+      footerImage.dataUrl,
+      'PNG',
+      pageWidth / 2 - footerImage.widthMm / 2,
+      footerY - footerImage.heightMm / 2,
+      footerImage.widthMm,
+      footerImage.heightMm
+    );
+  } else {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text(footerNote, pageWidth / 2, footerY, { align: 'center' });
+  }
 
   return doc;
 }
