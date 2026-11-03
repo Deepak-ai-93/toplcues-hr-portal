@@ -193,13 +193,25 @@ export const StaffEditModal: React.FC<StaffEditModalProps> = ({ staff, allStaff,
                 onChange={(e) => setForm({ ...form, department: e.target.value })}
                 className={inputClass}
               >
-                {['Engineering', 'Product', 'Design', 'Quality Assurance', 'Executive Leadership', 'Human Resources', 'Finance', 'Operations'].map(
-                  (department) => (
+                {Array.from(
+                  new Set([
+                    'Engineering',
+                    'Product',
+                    'Design',
+                    'Quality Assurance',
+                    'Executive Leadership',
+                    'Human Resources',
+                    'Finance',
+                    'Operations',
+                    form.department,
+                  ])
+                )
+                  .filter(Boolean)
+                  .map((department) => (
                     <option key={department} value={department}>
                       {department}
                     </option>
-                  )
-                )}
+                  ))}
               </select>
             </div>
             <div>

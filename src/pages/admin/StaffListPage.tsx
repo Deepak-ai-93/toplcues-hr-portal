@@ -70,6 +70,8 @@ export const StaffListPage: React.FC = () => {
   const [newSalary, setNewSalary] = useState<number>(0);
   const [salaryEffectiveDate, setSalaryEffectiveDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [salaryReason, setSalaryReason] = useState<string>('');
+  const [salarySaving, setSalarySaving] = useState<boolean>(false);
+  const [salaryError, setSalaryError] = useState<string | null>(null);
 
   // Add Staff Form Fields
   const [formData, setFormData] = useState({
@@ -352,8 +354,23 @@ export const StaffListPage: React.FC = () => {
 
   // Salary Revision
   async function handleSalaryRevision() {
-    if (!selectedStaff || newSalary <= 0 || !salaryReason.trim()) return;
+    if (!selectedStaff) return;
 
+    if (!Number.isFinite(newSalary) || newSalary <= 0) {
+      setSalaryError('Enter a monthly salary greater than zero.');
+      return;
+    }
+    if (!salaryEffectiveDate) {
+      setSalaryError('An effective date is required.');
+      return;
+    }
+    if (!salaryReason.trim()) {
+      setSalaryError('A reason is required for the audited revision.');
+      return;
+    }
+
+    setSalarySaving(true);
+    setSalaryError(null);
     try {
       const historyId = `sal_${Date.now()}`;
       await addSalaryHistory({
@@ -388,11 +405,29 @@ export const StaffListPage: React.FC = () => {
         },
       });
 
+      setSelectedStaff((prev) =>
+        prev ? { ...prev, monthlySalary: newSalary, salaryEffectiveDate } : prev
+      );
       setIsSalaryModalOpen(false);
       setSalaryReason('');
       await loadStaff();
+
+      try {
+        const hist = await listSalaryHistory(selectedStaff.id);
+        hist.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+        setSalaryHistory(hist);
+      } catch {
+        // The revision is saved; keep the existing history list if refresh fails.
+      }
+
+      alert(
+        `Salary revised to ${formatIndianCurrency(newSalary)} effective ${salaryEffectiveDate}.`
+      );
     } catch (err) {
       console.error('Salary revision error:', err);
+      setSalaryError(err instanceof Error ? err.message : 'Failed to save salary revision.');
+    } finally {
+      setSalarySaving(false);
     }
   }
 
@@ -1042,7 +1077,9 @@ export const StaffListPage: React.FC = () => {
                   <button
                     onClick={() => {
                       setNewSalary(selectedStaff.monthlySalary);
+                      setSalaryEffectiveDate(new Date().toISOString().split('T')[0]);
                       setSalaryReason('');
+                      setSalaryError(null);
                       setIsSalaryModalOpen(true);
                     }}
                     className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -1188,6 +1225,12 @@ export const StaffListPage: React.FC = () => {
               Revising salary will update future payroll periods. Historical finalized periods will remain unchanged.
             </p>
 
+            {salaryError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
+                {salaryError}
+              </div>
+            )}
+
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -1208,6 +1251,7 @@ export const StaffListPage: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  required
                   value={salaryEffectiveDate}
                   onChange={(e) => setSalaryEffectiveDate(e.target.value)}
                   className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
@@ -1237,10 +1281,10 @@ export const StaffListPage: React.FC = () => {
               </button>
               <button
                 onClick={handleSalaryRevision}
-                disabled={newSalary <= 0 || !salaryReason.trim()}
+                disabled={salarySaving}
                 className="px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50"
               >
-                Save Revision & Log
+                {salarySaving ? 'Saving...' : 'Save Revision & Log'}
               </button>
             </div>
           </div>
