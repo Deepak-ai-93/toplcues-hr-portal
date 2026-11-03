@@ -45,6 +45,42 @@ import {
 } from '../../lib/payrollCalculator';
 import { useAuth } from '../../lib/authContext';
 
+interface DecimalInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}
+
+// Text-based numeric input so a decimal point can be typed before a digit
+// (type="number" + controlled value drops partial entries like "1.").
+function DecimalInput({ value, onChange, disabled }: DecimalInputProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const display = draft ?? String(Number.isFinite(value) ? value : 0);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      disabled={disabled}
+      value={display}
+      onFocus={(e) => {
+        setDraft(display);
+        e.currentTarget.select();
+      }}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (!/^\d*\.?\d*$/.test(raw)) return;
+        setDraft(raw);
+        const parsed = Number.parseFloat(raw);
+        onChange(Number.isFinite(parsed) ? parsed : 0);
+      }}
+      onBlur={() => setDraft(null)}
+      className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+    />
+  );
+}
+
 export const PayrollEntryPage: React.FC = () => {
   const { userProfile, role } = useAuth();
   const isSuperAdmin = role === 'SUPER_ADMIN';
@@ -593,9 +629,11 @@ export const PayrollEntryPage: React.FC = () => {
                 <th className="py-2.5 px-3 font-semibold text-center">Late (2 Gr.)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Extra Brk (₹50)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Early Lv (₹50)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Extra Pay (₹)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">OT Hrs (₹100)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Hol Days (1.5x)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Outdoor (₹500)</th>
+                <th className="py-2.5 px-3 font-semibold text-center">Hol Hrs (₹150)</th>
                 <th className="py-2.5 px-3 font-semibold text-right text-emerald-700 dark:text-emerald-400">
                   +Additions
                 </th>
@@ -611,7 +649,7 @@ export const PayrollEntryPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={15} className="py-8 text-center text-slate-400">
+                  <td colSpan={17} className="py-8 text-center text-slate-400">
                     No active staff found for this payroll cycle.
                   </td>
                 </tr>
@@ -633,126 +671,100 @@ export const PayrollEntryPage: React.FC = () => {
 
                     {/* LWP Days */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.lwpDays || 0}
-                        onChange={(e) => handleInputChange(r.staffId, 'lwpDays', parseFloat(e.target.value))}
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'lwpDays', value)}
                       />
                     </td>
 
                     {/* CL Days */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.clDays || 0}
-                        onChange={(e) => handleInputChange(r.staffId, 'clDays', parseFloat(e.target.value))}
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'clDays', value)}
                       />
                     </td>
 
                     {/* EL Count */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.elCount || 0}
-                        onChange={(e) => handleInputChange(r.staffId, 'elCount', parseInt(e.target.value, 10))}
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'elCount', value)}
                       />
                     </td>
 
                     {/* Late Count */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.lateCount || 0}
-                        onChange={(e) => handleInputChange(r.staffId, 'lateCount', parseInt(e.target.value, 10))}
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'lateCount', value)}
                       />
                     </td>
 
                     {/* Extra Break Hours */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.extraBreakHours || 0}
-                        onChange={(e) =>
-                          handleInputChange(r.staffId, 'extraBreakHours', parseFloat(e.target.value))
-                        }
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'extraBreakHours', value)}
                       />
                     </td>
 
                     {/* Early Leave Hours */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.earlyLeaveHours || 0}
-                        onChange={(e) =>
-                          handleInputChange(r.staffId, 'earlyLeaveHours', parseFloat(e.target.value))
-                        }
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'earlyLeaveHours', value)}
+                      />
+                    </td>
+
+                    {/* Extra Pay */}
+                    <td className="py-2 px-2 text-center">
+                      <DecimalInput
+                        value={r.extraPayment || 0}
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'extraPayment', value)}
                       />
                     </td>
 
                     {/* OT Hours */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.extraHours || 0}
-                        onChange={(e) => handleInputChange(r.staffId, 'extraHours', parseFloat(e.target.value))}
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'extraHours', value)}
                       />
                     </td>
 
                     {/* Holiday Working Days */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.holidayWorkingDays || 0}
-                        onChange={(e) =>
-                          handleInputChange(r.staffId, 'holidayWorkingDays', parseInt(e.target.value, 10))
-                        }
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'holidayWorkingDays', value)}
                       />
                     </td>
 
                     {/* Outdoor Days */}
                     <td className="py-2 px-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        disabled={isLocked}
+                      <DecimalInput
                         value={r.outdoorWorkingDays || 0}
-                        onChange={(e) =>
-                          handleInputChange(r.staffId, 'outdoorWorkingDays', parseInt(e.target.value, 10))
-                        }
-                        className="w-14 text-center py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 tabular-nums"
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'outdoorWorkingDays', value)}
+                      />
+                    </td>
+
+                    {/* Holiday Working Hours */}
+                    <td className="py-2 px-2 text-center">
+                      <DecimalInput
+                        value={r.holidayWorkingHours || 0}
+                        disabled={isLocked}
+                        onChange={(value) => handleInputChange(r.staffId, 'holidayWorkingHours', value)}
                       />
                     </td>
 
@@ -857,6 +869,10 @@ export const PayrollEntryPage: React.FC = () => {
                   Additions Breakdown
                 </div>
                 <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="p-2.5 flex justify-between">
+                    <span>Extra Pay:</span>
+                    <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.extraPayment)}</span>
+                  </div>
                   <div className="p-2.5 flex justify-between">
                     <span>Overtime ({previewRecord.extraHours} hrs × ₹100):</span>
                     <span className="font-mono tabular-nums">+{formatIndianCurrency(previewRecord.extraHoursPayment)}</span>
