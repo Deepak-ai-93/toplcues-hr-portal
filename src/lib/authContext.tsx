@@ -6,7 +6,7 @@
 import type { User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { StaffProfile, UserProfile, UserRole } from '../types';
-import { getStaffByEmail, upsertProfile } from './api';
+import { getMyRole, getStaffByEmail, upsertProfile } from './api';
 import { logAuditEvent } from './auditLogger';
 import { seedInitialDatabaseIfNeeded } from './seedData';
 import { supabase } from './supabase';
@@ -27,8 +27,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SUPER_ADMIN_EMAIL = 'ceo@topclues.in';
-const HR_EMAILS = ['unicorn@topclues.in', 'marketing@topclues.in'];
+// Dev persona simulator only. Real roles are resolved by public.my_role() in the database.
+const SIMULATED_SUPER_ADMIN_EMAILS = ['ceo@topclues.in', 'dbagada910@gmail.com'];
+const SIMULATED_HR_EMAILS = ['unicorn@topclues.in', 'marketing@topclues.in'];
 
 let seedAttempted = false;
 
@@ -84,10 +85,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       let resolvedRole: UserRole | null = null;
 
-      if (email === SUPER_ADMIN_EMAIL) {
-        resolvedRole = 'SUPER_ADMIN';
-      } else if (HR_EMAILS.includes(email)) {
-        resolvedRole = 'HR';
+      if (simulatedEmail) {
+        if (SIMULATED_SUPER_ADMIN_EMAILS.includes(email)) {
+          resolvedRole = 'SUPER_ADMIN';
+        } else if (SIMULATED_HR_EMAILS.includes(email)) {
+          resolvedRole = 'HR';
+        }
+      } else {
+        resolvedRole = await getMyRole();
       }
 
       let matchedStaff: StaffProfile | null = null;

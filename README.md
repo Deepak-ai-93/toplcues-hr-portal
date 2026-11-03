@@ -21,11 +21,12 @@ Production-ready enterprise payroll calculation, role-based access management, s
 | Email | Role | Scope of Authority |
 |---|---|---|
 | `ceo@topclues.in` | `SUPER_ADMIN` | Full control over all staff, payroll cycles, company settings, calculation rules, terms versions, reopenings, and bank reveals. |
+| `dbagada910@gmail.com` | `SUPER_ADMIN` | Same full control as the CEO account. |
 | `unicorn@topclues.in` | `HR` | Add/edit staff, enter attendance/payroll inputs, generate slips, dispatch emails, view reports. Cannot modify terms or rules. |
 | `marketing@topclues.in` | `HR` | Add/edit staff, enter attendance/payroll inputs, generate slips, dispatch emails, view reports. Cannot modify terms or rules. |
 | *Active Staff Profiles* | `STAFF` | Self-service access strictly limited to own profile, masked bank details, published salary slips, and terms. |
 
-> **Security Rule**: Any unknown Google account attempting to sign in is immediately denied access, signed out, and presented with: *"Your account is not authorized. Please contact Topclues Solutions HR."*
+> **Security Rule**: Management roles are stored in `public.user_roles` and resolved server-side by `public.my_role()`. Any unknown Google account attempting to sign in is immediately denied access, signed out, and presented with: *"Your account is not authorized. Please contact Topclues Solutions HR."*
 
 ---
 

@@ -330,7 +330,7 @@ export const PayrollEntryPage: React.FC = () => {
   // Reopen Finalized Payroll (Super Admin only)
   async function handleReopenPayroll() {
     if (!isSuperAdmin) {
-      alert('Only the Super Admin (ceo@topclues.in) is authorized to reopen finalized payroll.');
+      alert('Only a Super Admin is authorized to reopen finalized payroll.');
       return;
     }
 

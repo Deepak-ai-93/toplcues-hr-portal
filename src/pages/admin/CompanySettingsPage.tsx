@@ -54,7 +54,7 @@ export const CompanySettingsPage: React.FC = () => {
   async function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault();
     if (!isSuperAdmin) {
-      alert('Only the Super Admin (ceo@topclues.in) can update company settings or payroll rules.');
+      alert('Only a Super Admin can update company settings or payroll rules.');
       return;
     }
 

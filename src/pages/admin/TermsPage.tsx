@@ -68,7 +68,7 @@ export const TermsPage: React.FC = () => {
 
   function handleStartNewVersion() {
     if (!isSuperAdmin) {
-      alert('Only the Super Admin (ceo@topclues.in) can create terms versions.');
+      alert('Only a Super Admin can create terms versions.');
       return;
     }
     const nextVer = selectedVersion

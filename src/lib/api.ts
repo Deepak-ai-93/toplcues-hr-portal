@@ -320,6 +320,12 @@ export async function updateBankChangeRequest(id: string, patch: Partial<BankCha
 // Profiles
 // ---------------------------------------------------------------------------
 
+export async function getMyRole(): Promise<UserProfile['role'] | null> {
+  const { data, error } = await supabase.rpc('my_role');
+  if (error) throw error;
+  return (data as UserProfile['role'] | null) ?? null;
+}
+
 export async function getProfile(uid: string): Promise<UserProfile | null> {
   const row = await fetchById<Record<string, unknown>>('profiles', uid);
   if (!row) return null;
